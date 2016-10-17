@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Droidrone　Rovernoid (Android WebRTC RC Rover) </title>
+	<!-- DroidRover,　AndRover はすでに有った -->
+        <link rel="shortcut icon" href="http://www.cirlution.com/favicon.ico">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="utf-8">
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script type="text/javascript" src="https://skyway.io/dist/0.3/peer.js"></script>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCYgefNHuojh9xFK6EAWPDjQc8-x1bg4o0&amp;libraries=geometry"></script>
+        
+	<script type="text/javascript" src="droidrone-skyway-auto.js"></script>
+	<script type="text/javascript" src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
+    </head>
+    <body>
+        <table> <!--style="position: absolute; top: 0px; left: 650px">-->
+            <tr>
+                <td style="vertical-align: top; text-align: right; width: 50px;"> <!-- text-align:center;">  -->
+		    <!-- input要素に type="range" を指定すると、大まかな数値の入力欄を作成できます。 http://www.tagindex.com/html5/form/input_range.html-->  
+	    	    Camera Y:<br />
+		    MIN↑<input type="number" id="yCMinRange" min="900" max="1500" value="1000" style="width:50px" /><br />
+                    C補正<input type="number" id="yCCenter" min="1350" max="1550" value="1500" style="width:50px" /><br />
+		    MAX↓<input type="number" id="yCMaxRange" min="1500" max="1700" value="1500" style="width:50px" /><br />
+                    Camera X : <br />
+                    C補正<input type="number" id="xCCenter" min="1400" max="1600" value="1500" style="width:50px" /><br />
+		    <button id="yCSet">Center</button><br />
+		    <input type="range" id="yCamera" style="transform:rotate(90deg);position: relative; left: 0px; top: 70px"/><br />
+		    <!--td 幅を狭くできない、tdでInput Range囲まないと　レバーをマウス操作できない現象あり2016/04/22-->
+                </td>
+		<td style="text-align:center;">
+                    <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video><br />
+                    <!--010.CSS3でVideoタグを回転させる https://sites.google.com/site/westinthefareast/home/html5/css3videorotate -->
+		    <pre id="orient"></pre>  
+		    <input type="range" id="xCamera" min="900" max="2100" style="transform:rotate(180deg)"/>
+                    <button id="xCset">Center</button>
+                </td>
+                <td colspan="2">
+                    <div style="width:500px; height:340px; background-color: #AAA" id="map-canvas"></div><br />
+                    Map表示:
+                    (<label for="MapPanOff">現在地</label>
+                    <input id="MapPanOff" name="RadioGroup2" type="radio"  checked="checked" />)
+                    (<label for="MapPanOn">パン</label>
+                    <input id="MapPanOn" name="RadioGroup2" type="radio" />)
+                    /自動操縦:
+                    (<label for="autoOff">Off</label>
+                    <input id="autoOff" name="RadioGroup3" type="radio"  checked="checked" />)
+                    (<label for="selfOn">半自動</label>
+                    <input id="selfOn" name="RadioGroup3" type="radio" />)
+                    (<label for="autoOn">On</label>
+                    <input id="autoOn" name="RadioGroup3" type="radio" />)
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4">
+                    <div id="droidroneStat">受信待ち.ページがズームしているとMapが正常に表示されないことがあります</div>
+                </td>
+            </tr>
+            <tr><td style="vertical-align: top;">
+		    ホイル転距離<br />
+		    <input type="number" id="countM" value="230" style="width:50px">mm<br />
+                    RC-B電圧:<span id="RcBatVol"></span> <br />
+                    camera:<br />
+                    <button id="videoRotate270">270°</button><button id="videoRotate0">0°</button><br />
+                    <br />
+                    <!-- input type="number" http://www.htmq.com/html5/input_type_number.shtml -->
+                    Y範囲<input type="number" id="yRange" min="200" max="600" value="400" style="width:50px" /><br />
+                    Y補正<input type="number" id="yCenter" min="1400" max="1600" value="1500" style="width:50px" /><br />
+                    X範囲<input type="number" id="xRange" min="200" max="600" value="400" style="width:50px" /><br />
+                    X補正<input type="number" id="xCenter" min="1400" max="1600" value="1500"  style="width:50px" /><br />
+                </td>
+                <td style="vertical-align: top;">
+                    <!-- HTML5 canvasを重ねる http://www.happytrap.jp/blogs/2012/04/15/8835/  -->
+                    <div style="position: relative;">
+                    <canvas id="mouseCanvas" width="200" height="200" style="position: absolute; left: 0; top: 0; z-index: 0; border:1px solid #CCC;"></canvas>
+                    <canvas id="padCanvas" width="200" height="200" style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+                    </div>
+ 		<td style="vertical-align: top;">
+		    <!--Button for the user to click to initiate auth sequence -->
+		    <button id="authorizeButton" onclick="handleAuth()">Authorize GoogleID</button><br />
+                    <!-- <select id="peers"><option>Serect Android-ID</option></select><br /> -->
+		    <textarea id="messages" style="width:250px; height:150px;"></textarea><br />
+		    Android:<span id="Astat"></span>
+                </td>
+                <td style="vertical-align: top;">
+                    <button id="mapClear">Mapクリア</button> <button id="btConn">BT接続</button><br />
+                    <textarea id="btMessages" style="width:200px; height:110px;"></textarea><br />
+                    <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
+                </td>
+	    </tr>
+        </table>
+	<br />
+	JSON:<span id="JSON"></span>
+    </body>
+</html>

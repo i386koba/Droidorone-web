@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="shortcut icon" href="http://www.cirlution.com/favicon.ico">
+        <script type="text/javascript">
+            //9つの覚えておくと便利そうなNetBeansショートカットキー
+            //http://heppoko-room.net/archives/687
+            //Ctrlキー + Shift + 上/下：上に複製/下に複製
+            //
+            //Drive REST API JavaScript Quickstart
+            //https://developers.google.com/drive/v2/web/quickstart/js
+            //
+            // Your Client ID can be retrieved from your project in the Google
+            // Developer Console, https://console.developers.google.com
+            var CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
+            var SCOPES = ['https://www.googleapis.com/auth/drive'];
+            var gapi;
+            /**
+            * Check if current user has authorized this application.
+            */
+            function checkAuth() {
+                gapi.auth.authorize(
+                    {   'client_id': CLIENT_ID,
+                        'scope': SCOPES.join(' '),
+                        'immediate': true
+                    },  handleAuthResult);
+            }
+
+            function handleAuthResult(authResult) {
+                document.body.appendChild(document.createTextNode("handleAuthResult"));
+                var authButton = document.getElementById('authorizeButton');
+                var main = document.getElementById('main');
+                authButton.style.display = 'none';
+                main.style.display = 'none';
+                if (authResult && !authResult.error) {
+                    // Access token has been successfully retrieved, requests can be sent to the API.
+                    main.style.display = 'block';
+                    var saveBtn = document.getElementById('saveBtn');
+                    saveBtn.onclick = writeFile;
+                    var lsBtn = document.getElementById('lsBtn');
+                    lsBtn.onclick = ls;
+                    //main.onchange = uploadFile;
+                } else {
+                    // No access token could be retrieved, show the button to start the authorization flow.
+                    authButton.style.display = 'block';
+                    authButton.onclick = function () {
+                        gapi.auth.authorize({
+                            'client_id': CLIENT_ID,
+                            'scope': SCOPES,
+                            'immediate': false
+                        },  handleAuthResult);
+                    };
+                }
+            }
+           /**
+           * Initiate auth flow in response to user clicking authorize button.
+           *
+           * @param {Event} event Button click event.
+           */
+          function handleAuthClick(event) {
+            gapi.auth.authorize(
+              {client_id: CLIENT_ID, scope: SCOPES, immediate: false},
+              handleAuthResult);
+            return false;
+          }
+            /**
+            * Start the file upload.
+            *
+            * @param {Object} evt Arguments from the file selector.
+            */
+            function writeFile(evt) {
+                gapi.client.load('drive', 'v2', function () {
+                    //var file = evt.target.files[0];
+                    var fileName = document.getElementById("fileName").value;
+                    var content = document.getElementById("content").value;
+                    console.log("fileName = " + fileName);
+                    console.log("content = " + content);
+                    insertFile(fileName, content);
+                });
+            }
+            /**
+             * Insert new file.
+             *
+             * @param {fileName} fileName 
+             * //保存するファイル名
+             * @param {content}  content
+             *  //保存するファイルの内容
+             * @param {Function} callback Function to call when the request is complete.
+             */
+            function insertFile(fileName, content, callback) {
+                var boundary = '-------314159265358979323846';
+                var delimiter = "\r\n--" + boundary + "\r\n";
+                var close_delim = "\r\n--" + boundary + "--";
+                var contentType = 'text/plain';
+                var metadata = {
+                    'title': fileName,
+                    'mimeType': contentType
+                };
+                var base64Data = utf8_to_b64(content);
+                var multipartRequestBody = delimiter +
+                    'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter +
+                    'Content-Type: ' + contentType + '\r\n' +
+                    'Content-Transfer-Encoding: base64\r\n' +
+                    '\r\n' + base64Data + close_delim;
+                var request = gapi.client.request({
+                    'path': '/upload/drive/v2/files',
+                    'method': 'POST',
+                    'params': {'uploadType': 'multipart'},
+                    'headers': {
+                        'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+                    },
+                    'body': multipartRequestBody
+                });
+                if (!callback) {
+                    callback = function (file) {
+                        alert("保存しました。");
+                        console.log(file);
+                    };
+                }
+                request.execute(callback);
+            }
+
+            // from http://ecmanaut.blogspot.jp/2006/07/encoding-decoding-utf8-in-javascript.html
+            function utf8_to_b64(str) {
+                return window.btoa(unescape(encodeURIComponent(str)));
+            }
+
+//           http://jsdo.it/kjunichi/1N1a
+//           Google DriveのフォルダIDを取得する
+            function appendPre(message) {
+                var pre = document.getElementById('output');
+                var textContent = document.createTextNode(message + '\n');
+                pre.appendChild(textContent);
+            }
+            /**
+             * Start ls
+             * @param {Object} evt Arguments from the file selector.
+             */
+ 
+//Google+ APIのOAuth認証によるログイン方法のまとめ
+//http://www.koikikukan.com/archives/2014/02/13-013333.php
+//
+//JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する
+//http://qiita.com/kjunichi/items/552f13b48685021966e4
+//
+//JavascriptでGoogleAPI OAuth2.0を利用する方法
+//http://qiita.com/PianoScoreJP/items/48d2c1d64d7d9b0a55b0
+//
+//承認の認証情報を取得する 本家　日本語
+//https://developers.google.com/youtube/registering_an_application?hl=ja
+//
+//Web サーバアプリケーションで OAuth2 を使う(for Google API)
+//http://net-newbie.com/apps/Oauth2WebServer.html
+//
+//以下手順
+//Google Developers Console ではプロジェクトを使用してリソースを管理　プロジェクト選択
+//https://console.developers.google.com/projectselector/apis/credentials
+        </script>
+        <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
+        <!--Add a file picker for the user to start the upload process -->
+	<title>Google Drive test</title>
+    </head>
+    <body>
+        <div>
+            <span>Authorize access to Drive API</span>
+            <!--Button for the user to click to initiate auth sequence -->
+            <button id="authorizeButton" onclick="handleAuthClick(event)">
+                   Authorize
+            </button>
+        </div>
+        <div id="main" style="display: none">
+            <p>
+                <label>ファイル名</label>
+                <input type="text" id="fileName">
+            </p>
+            <p>
+                <label>内容</label>
+                <textarea id="content" cols="50" rows="5"></textarea>
+            </p>
+            <p>
+                <button id="saveBtn">
+                    保存
+                </button>
+            </p>
+            <p>
+                <button id="lsBtn">ls</button>
+            </p>   
+            <div id="output"></div>
+            
+        </div>
+      
+    </body>
+</html>
