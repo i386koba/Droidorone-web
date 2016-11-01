@@ -50,15 +50,15 @@ function handleAuth() {
         // - 自分のIDはpeerオブジェクトのidプロパティに存在する
         var connID = peer.id;
         setMsgTextArea('My ConnID : ' + connID);
-        peer.listAllPeers(function (peerArray) {
-            for (var i = 0; i < peerArray.length; i++) {
-                var idStr = peerArray[i];
-                if (idStr !== connID) {
-                    $('#peers').append('<option>' + peerArray[i] + '</option>');
-                    setMsgTextArea('(' + i + ') listID : ' + peerArray[i]);
-                }
-            }
-        });
+//        peer.listAllPeers(function (peerArray) {
+//            for (var i = 0; i < peerArray.length; i++) {
+//                var idStr = peerArray[i];
+//                if (idStr !== connID) {
+//                    $('#peers').append('<option>' + peerArray[i] + '</option>');
+//                    setMsgTextArea('(' + i + ') listID : ' + peerArray[i]);
+//                }
+//            }
+//        });
     });
     //
     gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES, immediate: false}, handleAuthResult);
