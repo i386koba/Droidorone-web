@@ -31,7 +31,11 @@
 		    <!--td 幅を狭くできない、tdでInput Range囲まないと　レバーをマウス操作できない現象あり2016/04/22-->
                 </td>
 		<td style="text-align:center;">
-                    <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video><br />
+                    <!--<video id="android-video" autoplay></video>
+                    Andoid 画面消灯時にカメラが回転するのに対応して320X320　の正方形にする。
+                    -->
+                    <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video>
+                    <br />
                     <!--010.CSS3でVideoタグを回転させる https://sites.google.com/site/westinthefareast/home/html5/css3videorotate -->
 		    <pre id="orient"></pre>  
 		    <input type="range" id="xCamera" min="900" max="2100" style="transform:rotate(180deg)"/>
@@ -90,6 +94,16 @@
                     <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
                 </td>
 	    </tr>
+            <tr>
+                <td colspan="4">
+                    <!--<canvas id="tmp-canvas" style="display: none; width:320px; height:320px"></canvas>-->
+                    <canvas id="tmp-canvas"></canvas>
+                    <p><button id="snapshot-btn">snapshot</button></p>
+                    <p>snap-area:</p>
+                    <div id="snap-area"></div>
+  
+                </td>
+            </tr>
         </table>
 	<br />
 	JSON:<span id="JSON"></span>

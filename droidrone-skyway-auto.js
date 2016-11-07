@@ -151,6 +151,7 @@ function loadPeerId() {
 }
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
 //JavaScript コールバックの作り方 http://qiita.com/39_isao/items/68b3faf8897cbb343d8f
+
 function downloadFile(file, callback) {
     if (file.downloadUrl) {
         var accessToken = gapi.auth.getToken().access_token;
@@ -168,6 +169,7 @@ function downloadFile(file, callback) {
         callback(null);
     }
 }
+
 //DOM読み込み完了　初期化
 var google;
 google.maps.event.addDomListener(window, 'load', initialize);
@@ -232,7 +234,7 @@ function peerStart(destPeerId) {
                 setMsgTextArea('stream url: ' + url);
                 // video要素のsrcに設定することで、映像を表示する 	 	
                 $('#android-video').prop('src', url);
-                //http://www.htmq.com/canvas/drawImage.shtml
+               
                 //GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
                 //if (gamepadNo !== -1) {
                 //setInterval(gamePadListen, 1000 / 30);
@@ -244,9 +246,27 @@ function peerStart(destPeerId) {
         });
     });
 }
+//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
+var video;
+var tmpCanvas;
+var tmpCtx;
+
+function getSnap(){
+    tmpCtx.drawImage(video,0,40);//(320-240)/2=40
+    var img = new Image();
+    img.src = tmpCanvas.toDataURL('image/png');
+    img.onload = function(){
+        //img.width = 160;//=(320 /2) img.width / 2;
+        //img.height = 120;//=(240 / 2)img.height / 2;
+        console.log(img.width);
+        $('#snap-area').append(img);
+    };
+}
+
 //地図クリア
 var rPoly;
 var sPoly;
+
 function initialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = {
@@ -446,6 +466,10 @@ function initialize() {
 	rPath.clear();
 	//rPath.push(sPos);
     });
+    video = $('#android-video').get(0),
+    tmpCanvas = $('#tmp-canvas').get(0),
+    tmpCtx = tmpCanvas.getContext("2d");
+    $('#snapshot-btn').click(getSnap);
 }
 
 //マウスによるPAD操作の描画
