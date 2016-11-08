@@ -174,6 +174,12 @@ function downloadFile(file, callback) {
 var google;
 google.maps.event.addDomListener(window, 'load', initialize);
 
+//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
+var video;
+var tmpCanvas;
+var tmpCtx;
+var videoWidth;// = video.videoWidth;
+var videoHeight;// = video.videoHeight;
 function peerStart(destPeerId) {
     //peer接続されていたら無効
     if (helloAndroid) {
@@ -233,8 +239,10 @@ function peerStart(destPeerId) {
                 var url = window.URL.createObjectURL(stream);
                 setMsgTextArea('stream url: ' + url);
                 // video要素のsrcに設定することで、映像を表示する 	 	
-                $('#android-video').prop('src', url);
-               
+                video = $('#android-video');
+                video.prop('src', url);
+                tmpCanvas = $('#tmp-canvas');
+                $('#snapshot-btn').click(getSnap);
                 //GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
                 //if (gamepadNo !== -1) {
                 //setInterval(gamePadListen, 1000 / 30);
@@ -246,23 +254,25 @@ function peerStart(destPeerId) {
         });
     });
 }
-//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
-var video;
-var tmpCanvas;
-var tmpCtx;
 
-function getSnap(){
-    tmpCtx.drawImage(video,0,0);
+function getSnap(){ 
+    videoWidth = video.get(0).videoWidth;
+    videoHeight = video.get(0).videoHeight;
+    console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
+    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+    tmpCanvas.attr("width", videoWidth);
+    tmpCanvas.attr("height", videoHeight);
+    tmpCtx = tmpCanvas.get(0).getContext("2d");
+    tmpCtx.drawImage(video.get(0) ,0 ,0);
     var img = new Image();
-    img.src = tmpCanvas.toDataURL('image/png');
+    img.src = tmpCanvas.get(0).toDataURL('image/png');
+    //http://www.html5.jp/tag/elements/video.html
+    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+  
     img.onload = function(){
-        //img.width = 160;//=(320 /2) img.width / 2;
-        //img.height = 120;//=(240 / 2)img.height / 2;
-        //http://www.html5.jp/tag/elements/video.html
-        //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-        console.log("videoWidth　: " + video.videoWidth);
-        console.log("videoHeight : " + video.videoHeight);
-        console.log(img.width);
+        img.width = videoWidth / 2;
+        img.height = videoHeight / 2;
+        console.log("img.width:hight = " + img.width + " : " + img.height);
      $('#snap-area').append(img);
     };
 }
@@ -302,9 +312,12 @@ function initialize() {
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
-    pCanvas = document.getElementById("padCanvas");
+    //pCanvas = document.getElementById("padCanvas");  
+    //canvas をjQueryで使う。 http://tnomura9.exblog.jp/12624562/ 
+    pCanvas = $("#padCanvas").get(0);
     padg = pCanvas.getContext("2d");
-    mCanvas = document.getElementById("mouseCanvas");
+    //mCanvas = document.getElementById("mouseCanvas");
+    mCanvas = $("#mouseCanvas").get(0);
     mouseg = mCanvas.getContext("2d");
     //初期化
     pMouse.x = 100;
@@ -470,10 +483,6 @@ function initialize() {
 	rPath.clear();
 	//rPath.push(sPos);
     });
-    video = $('#android-video').get(0),
-    tmpCanvas = $('#tmp-canvas').get(0),
-    tmpCtx = tmpCanvas.getContext("2d");
-    $('#snapshot-btn').click(getSnap);
 }
 
 //マウスによるPAD操作の描画
