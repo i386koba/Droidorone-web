@@ -252,14 +252,18 @@ var tmpCanvas;
 var tmpCtx;
 
 function getSnap(){
-    tmpCtx.drawImage(video,0,40);//(320-240)/2=40
+    tmpCtx.drawImage(video,0,0);
     var img = new Image();
     img.src = tmpCanvas.toDataURL('image/png');
     img.onload = function(){
         //img.width = 160;//=(320 /2) img.width / 2;
         //img.height = 120;//=(240 / 2)img.height / 2;
+        //http://www.html5.jp/tag/elements/video.html
+        //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+        console.log("" + video.videoWidth);
+        console.log("" + video.videoHeight);
         console.log(img.width);
-        $('#snap-area').append(img);
+     $('#snap-area').append(img);
     };
 }
 
