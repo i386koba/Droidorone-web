@@ -260,8 +260,8 @@ function getSnap(){
         //img.height = 120;//=(240 / 2)img.height / 2;
         //http://www.html5.jp/tag/elements/video.html
         //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-        console.log("" + video.videoWidth);
-        console.log("" + video.videoHeight);
+        console.log("videoWidth　: " + video.videoWidth);
+        console.log("videoHeight : " + video.videoHeight);
         console.log(img.width);
      $('#snap-area').append(img);
     };
