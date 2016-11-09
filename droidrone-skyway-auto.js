@@ -262,25 +262,28 @@ function getSnap(){
    
     tmpCanvas.attr("width", videoWidth);
     tmpCanvas.attr("height", videoHeight);
+      //http://www.html5.jp/tag/elements/video.html
+    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
     tmpCtx = tmpCanvas.get(0).getContext("2d");
     tmpCtx.drawImage(video.get(0) ,0 ,0);
-    //縦長なら回転
-    if (videoWidth < videoHeight) {
-      tmpCanvas.css("-webkit-transform", "rotate(270deg)");
-      //↑表示Canvasは回転するがキャプチャIMGは回転しない
-    }
-    //canvas.drawImagで貼り付ける画像を回転させる
-    //https://icondecotter.jp/blog/2013/03/02/canvas-drawimag%E3%81%A7%E8%B2%BC%E3%82%8A%E4%BB%98%E3%81%91%E3%82%8B%E7%94%BB%E5%83%8F%E3%82%92%E5%9B%9E%E8%BB%A2%E3%81%95%E3%81%9B%E3%82%8B/
     var img = new Image();
     img.src = tmpCanvas.get(0).toDataURL('image/png');
-    //http://www.html5.jp/tag/elements/video.html
-    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-  
+    
     img.onload = function(){
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
+        //縦長なら回転
+        if (videoWidth < videoHeight) {
+            //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
+            //↑表示Canvasは回転するがキャプチャIMGは回転しない
+            //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
+            $(img).css("-webkit-transform", "rotate(270deg)");
+            
+            console.log("rotate.");
+        }
+  
         console.log("img.width:hight = " + img.width + " : " + img.height);
-     $('#snap-area').append(img);
+        $('#snap-area').append(img);
     };
 }
 
