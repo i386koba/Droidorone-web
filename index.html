@@ -66,8 +66,10 @@
 		    ホイル転距離<br />
 		    <input type="number" id="countM" value="230" style="width:50px">mm<br />
                     RC-B電圧:<span id="RcBatVol"></span> <br />
-                    camera:<br />
-                    <button id="videoRotate270">270°</button><button id="videoRotate0">0°</button><br />
+                    <!--camera:<br />
+                    <button id="videoRotate270">270°</button>
+                    <button id="videoRotate0">0°</button><br />
+                    -->
                     <br />
                     <!-- input type="number" http://www.htmq.com/html5/input_type_number.shtml -->
                     Y範囲<input type="number" id="yRange" min="200" max="600" value="400" style="width:50px" /><br />
@@ -94,18 +96,12 @@
                     <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
                 </td>
 	    </tr>
-            <tr>
-                <td colspan="4">
-                    <!--<canvas id="tmp-canvas" style="display: none; width:320px; height:320px"></canvas>-->
-                    <canvas id="tmp-canvas"></canvas>
-                    <p><button id="snapshot-btn">snapshot</button></p>
-                    <p>snap-area:</p>
-                    <div id="snap-area"></div>
-  
-                </td>
-            </tr>
         </table>
 	<br />
 	JSON:<span id="JSON"></span>
+        <p><button id="snapshot-btn">snapshot</button></p>
+        <p>snap-area:</p>
+        <div id="snap-area"></div>
+        <canvas id="tmp-canvas"></canvas>
     </body>
 </html>

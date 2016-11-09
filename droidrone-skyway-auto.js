@@ -239,7 +239,6 @@ function peerStart(destPeerId) {
                 var url = window.URL.createObjectURL(stream);
                 setMsgTextArea('stream url: ' + url);
                 // video要素のsrcに設定することで、映像を表示する 	 	
-                video = $('#android-video');
                 video.prop('src', url);
                 tmpCanvas = $('#tmp-canvas');
                 $('#snapshot-btn').click(getSnap);
@@ -260,10 +259,18 @@ function getSnap(){
     videoHeight = video.get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
     //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+   
     tmpCanvas.attr("width", videoWidth);
     tmpCanvas.attr("height", videoHeight);
     tmpCtx = tmpCanvas.get(0).getContext("2d");
     tmpCtx.drawImage(video.get(0) ,0 ,0);
+    //縦長なら回転
+    if (videoWidth < videoHeight) {
+      tmpCanvas.css("-webkit-transform", "rotate(270deg)");
+      //↑表示Canvasは回転するがキャプチャIMGは回転しない
+    }
+    //canvas.drawImagで貼り付ける画像を回転させる
+    //https://icondecotter.jp/blog/2013/03/02/canvas-drawimag%E3%81%A7%E8%B2%BC%E3%82%8A%E4%BB%98%E3%81%91%E3%82%8B%E7%94%BB%E5%83%8F%E3%82%92%E5%9B%9E%E8%BB%A2%E3%81%95%E3%81%9B%E3%82%8B/
     var img = new Image();
     img.src = tmpCanvas.get(0).toDataURL('image/png');
     //http://www.html5.jp/tag/elements/video.html
@@ -483,6 +490,7 @@ function initialize() {
 	rPath.clear();
 	//rPath.push(sPos);
     });
+    video = $('#android-video');
 }
 
 //マウスによるPAD操作の描画
@@ -577,6 +585,9 @@ var reachInfoWinClose = false;
 google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
     reachInfoWinClose = true;
 });
+
+var vRotate = 0;
+
 function readJData(res) {
     $("#JSON").html(res);
     //Androidデータ読み出し
@@ -815,6 +826,17 @@ function readJData(res) {
             setBtTextArea(btr);
             lastBtR = btr;
         }
+    }
+    //Videoの向きを判断して回転
+    //縦長になった。
+    if (vRotate === 0 && video.get(0).videoHeight > video.get(0).videoWidth ){
+        video.css("-webkit-transform", "rotate(270deg)");
+        vRotate = 270;
+    }
+    //横長になった
+    if (vRotate === 270 && video.get(0).videoHeight < video.get(0).videoWidth ){
+        video.css("-webkit-transform", "rotate(0deg)");
+        vRotate = 0;
     }
 }
 
