@@ -88,12 +88,12 @@ $(window).on("beforeunload", function () {
     peerM.destroy();
 });
 
+var skyWayFolderID = "";
 function loadPeerId() {
     //SkyWayフォルダ検索
     var SKYWAYRC_DIR = "SkyWayRC";
     var SKYWAY_ANDROID_ID = "SkyWayAndroid.id";
     //Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
-    var skyWayFolderID = "";
     var skyWayIdfileID = "";
     var requestFolder = gapi.client.drive.files.list({
         q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'and trashed = false"
@@ -150,6 +150,67 @@ function loadPeerId() {
     });
 }
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
+//
+//GoogleDrive フォルダの存在チェックして新規作成やファイルの追加削除をしたい（権限もね）
+//フォルダとは、MIME タイプが application/vnd.google-apps.folder で、拡張子を持たないファイルです
+//[C#]Google Driveに新しいディレクトリを作る https://karlsnautr.blogspot.jp/2013/01/cgoogle-drive.html
+//Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
+//Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
+//skyWayFolderIDの下に読み込み共有の経路ファイル、写真用のTime番号のフォルダ作る。
+//GoogleDrive経路一覧共通ファイルに上記フォルダIDを追加。
+
+
+
+//JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
+//Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
+//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c
+
+/**
+ * Insert new file.
+ *
+ * @param {fileName} 保存するファイル名
+ * @param {content} 保存するファイルの内容
+ * @param {Function} callback Function to call when the request is complete.
+ */
+function insertFile(fileName, content, callback) {
+    var boundary = '-------314159265358979323846';
+    var delimiter = "\r\n--" + boundary + "\r\n";
+    var close_delim = "\r\n--" + boundary + "--";
+
+    var contentType = 'text/plain';
+ 
+    var metadata = {
+	'title': fileName,
+	'mimeType': contentType,
+	//
+	parents:[{id:直下のID},{id:その上のフォルダID}]
+    };
+    //utf8_to_b64 from http://ecmanaut.blogspot.jp/2006/07/encoding-decoding-utf8-in-javascript.html
+    var base64Data = window.btoa( unescape(encodeURIComponent( content ) ) );
+
+    var multipartRequestBody = delimiter +
+    'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + delimiter +
+    'Content-Type: ' + contentType + '\r\n' +
+    'Content-Transfer-Encoding: base64\r\n' +
+    '\r\n' + base64Data + close_delim;
+
+    var request = gapi.client.request({
+	'path': '/upload/drive/v2/files',
+	'method': 'POST',
+	'params': { 'uploadType': 'multipart' },
+	'headers': { 'Content-Type': 'multipart/mixed; boundary="' + boundary + '"' },
+	'body': multipartRequestBody
+    });
+    
+    if(!callback) {
+      callback = function (file) {
+	  //alert("保存しました。");
+	  console.log(file)
+      };
+    }
+    request.execute(callback);
+}
+
 //JavaScript コールバックの作り方 http://qiita.com/39_isao/items/68b3faf8897cbb343d8f
 
 function downloadFile(file, callback) {
