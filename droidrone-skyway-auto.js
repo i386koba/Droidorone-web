@@ -150,32 +150,38 @@ function loadPeerId() {
     });
 }
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
-//
-//GoogleDrive フォルダの存在チェックして新規作成やファイルの追加削除をしたい（権限もね）
-//フォルダとは、MIME タイプが application/vnd.google-apps.folder で、拡張子を持たないファイルです
-//[C#]Google Driveに新しいディレクトリを作る https://karlsnautr.blogspot.jp/2013/01/cgoogle-drive.html
-//フォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
-//Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
-//Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
 //skyWayFolderIDの下に読み込み共有の経路ファイル、写真用のTime番号のフォルダ作る。
 //GoogleDrive経路一覧共通ファイルに上記フォルダIDを追加。
-function gMkdir(name, callback) {
+//　GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
+//Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
+//Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
+
+function gMkdir(name) {
     var request = gapi.client.request({
         'path': '/upload/drive/v2/files',
         'method': 'POST',
         "title": name,
-        "parents": [{"id":skyWayFolderID}],
+        "parents": [{"id": skyWayFolderID}],
         "mimeType": "application/vnd.google-apps.folder"
     });
-    if (!callback) {
-      callback = function(file) {
-        console.log(file)
-      };
-    }
-    request.execute(callback);
- }
-
-
+    request.execute(function(file) {
+        console.log(file + '; fileID : ' + file.id);
+        //permissions change(共有（読み出し））
+        var body = {
+            //'value': value,//mailAddress
+            'type': 'anyone',
+            'role': 'reader'
+            };
+        var request = gapi.client.drive.permissions.insert({
+            'fileId': file.id,
+            'resource': body,
+            'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
+        });
+        request.execute(function(resp) { 
+            console.log('permissions:' + resp);
+        });
+    });
+}
 //JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
 //Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
 //Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c
