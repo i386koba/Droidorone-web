@@ -155,9 +155,9 @@ function loadPeerId() {
 //　GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
 //Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
-
+var saveDirID;
 function gMkdir(name) {
-    var request = gapi.client.request({
+    var request = gapi.client.drive.files.insert({ 
         'path': '/upload/drive/v2/files',
         'method': 'POST',
         "title": name,
@@ -165,39 +165,88 @@ function gMkdir(name) {
         "mimeType": "application/vnd.google-apps.folder"
     });
     request.execute(function(file) {
-        console.log(file + '; fileID : ' + file.id);
+        saveDirID = file.id;
+        console.log(file + '; saveDirID : ' + saveDirID);
         //permissions change(共有（読み出し））
         var body = {
             //'value': value,//mailAddress
             'type': 'anyone',
             'role': 'reader'
-            };
-        var request = gapi.client.drive.permissions.insert({
-            'fileId': file.id,
+        };
+        var perRequest = gapi.client.drive.permissions.insert({
+            'fileId': saveDirID,
             'resource': body,
             'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
         });
-        request.execute(function(resp) { 
+        perRequest.execute(function(resp) { 
             console.log('permissions:' + resp);
         });
     });
 }
 //JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
-//Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
-//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c
+//Simple upload https://developers.google.com/drive/v2/web/manage-uploads#simple
+//Playゲームサービス Publishing API シンプルアップロード http://www.milk-island.net/translate/ggd/games/services/publishing/upload.html
+function saveJpeg(name, data) {
+    //javascript でgoogle driveにファイルをupload最初folderと同じようにgapi.client.drive.files.insertを使ってuploadしようと試みていたのがそもそもの間違い
+    //gapi.client.requestを使えばすんなり成功。http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
+    var request = gapi.client.drive.files.insert({ 
+        'path': '/upload/drive/v2/files',
+        'method': 'POST',
+        'params': {'uploadType': 'media'},
+        "title": name,
+        "parents": [{"id": saveDirID}],
+        "mimeType": "'application/octet-stream'"
+    });
+  
+    request.execute(function(file) {
+        console.log(file + '; saveDirID : ' + saveDirID);
+    });
+    
+    var helper = functions.multipert_helper();
+/*
+=>helper.initial_body_requestは以下のフォーマットで文字列を作成(本家マニュアルより引用）
+var multipartRequestBody =
+    delimiter +
+    'Content-Type: application/json\r\n\r\n' +
+    JSON.stringify(metadata) +
+    delimiter +
+    'Content-Type: ' + contentType + '\r\n' +
+    'Content-Transfer-Encoding: base64\r\n' +
+    '\r\n' +
+    data +
+    close_delim;
+*/
+    var multipartRequestBody = helper.initial_body_request("gfileapi.htm",reader.result);
 
+    var request = gapi.client.request({
+        'path': '/upload/drive/v2/files',
+        'method': 'POST',
+        'params': {
+                    'uploadType': 'multipart'
+                  },
+        'headers': {
+          'Content-Type': helper.header_content_type()
+        },
+        'body': multipartRequestBody
+    });                
+    request.execute(function(e){
+        console.log(e);
+    });
+}
+
+//Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
+//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c       
 /**
  * Insert new file.
  *
  * @param {File} fileData File object to read data from.
  * @param {Function} callback Function to call when the request is complete.
  */
-// ほんとは const 宣言なんだけどNetbeansでエラーになるのでVar
-var boundary = '-------314159265358979323846';
-var delimiter = "\r\n--" + boundary + "\r\n";
-var close_delim = "\r\n--" + boundary + "--";
- 
-function insertFile(fileData, callback) {
+const boundary = '-------314159265358979323846';
+const delimiter = "\r\n--" + boundary + "\r\n";
+const close_delim = "\r\n--" + boundary + "--";
+// 既存ファイル上書きの場合 http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c#google-drive%E3%81%B8%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E4%BF%9D%E5%AD%98
+function insertFile(fileData) {
   var reader = new FileReader();
   reader.readAsBinaryString(fileData);
   reader.onload = function(e) {
@@ -206,8 +255,7 @@ function insertFile(fileData, callback) {
       'title': fileData.fileName,
       'mimeType': contentType
     };
-
-    var base64Data = btoa(reader.result);
+     var base64Data = btoa(reader.result);
     var multipartRequestBody =
         delimiter + 'Content-Type: application/json\r\n\r\n' +
         JSON.stringify(metadata) + delimiter +
@@ -222,12 +270,10 @@ function insertFile(fileData, callback) {
         'params': {'uploadType': 'multipart'},
         'headers': { 'Content-Type': 'multipart/mixed; boundary="' + boundary + '"' },
         'body': multipartRequestBody});
-    if (!callback) {
-      callback = function(file) {
+   
+    request.execute(function(file) {
         console.log(file)
-      };
-    }
-    request.execute(callback);
+    });
   }
 }
 
@@ -349,6 +395,8 @@ function getSnap(){
     tmpCtx.drawImage(video.get(0) ,0 ,0);
     var img = new Image();
     img.src = tmpCanvas.get(0).toDataURL('image/png');
+    // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+    // return canvas.toDataURL("image/jpeg", 0.5);
     
     img.onload = function(){
         img.width = videoWidth / 2;
@@ -359,10 +407,8 @@ function getSnap(){
             //↑表示Canvasは回転するがキャプチャIMGは回転しない
             //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
             $(img).css("-webkit-transform", "rotate(270deg)");
-            
             console.log("rotate.");
         }
-  
         console.log("img.width:hight = " + img.width + " : " + img.height);
         $('#snap-area').append(img);
     };
