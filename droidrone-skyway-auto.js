@@ -164,9 +164,10 @@ function gMkdir(name) {
         "parents": [{"id": skyWayFolderID}],
         "mimeType": "application/vnd.google-apps.folder"
     });
-    request.execute(function(file) {
-        saveDirID = file.id;
-        console.log(file + '; saveDirID : ' + saveDirID);
+    request.execute(function(insert) {
+        saveDirID = insert.id;
+        console.log(insert);
+	setMsgTextArea('JpegSaveDirID :' + saveDirID);
         //permissions change(共有（読み出し））
         var body = {
             //'value': value,//mailAddress
@@ -179,63 +180,36 @@ function gMkdir(name) {
             'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
         });
         perRequest.execute(function(resp) { 
-            console.log('permissions:' + resp);
+	    console.log('permissions:Done');
+	    console.log(resp);
         });
     });
 }
-//JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
-//Simple upload https://developers.google.com/drive/v2/web/manage-uploads#simple
-//Playゲームサービス Publishing API シンプルアップロード http://www.milk-island.net/translate/ggd/games/services/publishing/upload.html
-function saveJpeg(name, data) {
-    //javascript でgoogle driveにファイルをupload最初folderと同じようにgapi.client.drive.files.insertを使ってuploadしようと試みていたのがそもそもの間違い
-    //gapi.client.requestを使えばすんなり成功。http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
-    var request = gapi.client.drive.files.insert({ 
-        'path': '/upload/drive/v2/files',
-        'method': 'POST',
-        'params': {'uploadType': 'media'},
-        "title": name,
-        "parents": [{"id": saveDirID}],
-        "mimeType": "'application/octet-stream'"
-    });
-  
-    request.execute(function(file) {
-        console.log(file + '; saveDirID : ' + saveDirID);
-    });
-    
-    var helper = functions.multipert_helper();
-/*
-=>helper.initial_body_requestは以下のフォーマットで文字列を作成(本家マニュアルより引用）
-var multipartRequestBody =
-    delimiter +
-    'Content-Type: application/json\r\n\r\n' +
-    JSON.stringify(metadata) +
-    delimiter +
-    'Content-Type: ' + contentType + '\r\n' +
-    'Content-Transfer-Encoding: base64\r\n' +
-    '\r\n' +
-    data +
-    close_delim;
-*/
-    var multipartRequestBody = helper.initial_body_request("gfileapi.htm",reader.result);
 
-    var request = gapi.client.request({
-        'path': '/upload/drive/v2/files',
+//GDアップロードにはSimple、マルチパートがある。
+//Simple upload https://developers.google.com/drive/v2/web/manage-uploads#simple
+//うまくいかなかった。gapi.client.drive.files.insertはフォルダ以外のアップロードはJavascriptで使えない模様。
+//gapi.client.requestでないとファイルのアップロードは無理。
+//gapi.client.requestマルチパートアップロードでないとファイル名指定できない。シンプルアップロードではinsertでないとファイル名指定できない。
+//よって、ファイル名を指定したいシンプルアップロードアップデートは無理な模様。
+//drive v2 でファイルupload 
+function saveJpegS(name, data) {
+    var request = gapi.client.drive.files.insert({//insertでないとファイル名指定できない
+	'path': '/upload/drive/v2/files?uploadType=media',
         'method': 'POST',
-        'params': {
-                    'uploadType': 'multipart'
-                  },
-        'headers': {
-          'Content-Type': helper.header_content_type()
-        },
-        'body': multipartRequestBody
-    });                
-    request.execute(function(e){
-        console.log(e);
+	"title": name,
+        "parents": [{"id": saveDirID}],
+        "mimeType": "image/jpeg",
+	'data': data
+    });
+    request.execute(function(insert) {
+        console.log( 'saveJpeg : '+ insert.id);
+	console.log(insert);
     });
 }
-
-//Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
-//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c       
+//いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
+//JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
+//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c  
 /**
  * Insert new file.
  *
@@ -245,37 +219,35 @@ var multipartRequestBody =
 const boundary = '-------314159265358979323846';
 const delimiter = "\r\n--" + boundary + "\r\n";
 const close_delim = "\r\n--" + boundary + "--";
-// 既存ファイル上書きの場合 http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c#google-drive%E3%81%B8%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E4%BF%9D%E5%AD%98
-function insertFile(fileData) {
-  var reader = new FileReader();
-  reader.readAsBinaryString(fileData);
-  reader.onload = function(e) {
-    var contentType = fileData.type || 'application/octet-stream';
+
+function saveJpegM(name, data) {
+    var contentType = 'image/jpeg'; // 'application/octet-stream';
     var metadata = {
-      'title': fileData.fileName,
-      'mimeType': contentType
+      'title': name,
+      'mimeType': contentType,
+      'parents': [{'id': saveDirID}]//ここで指定
     };
-     var base64Data = btoa(reader.result);
     var multipartRequestBody =
         delimiter + 'Content-Type: application/json\r\n\r\n' +
         JSON.stringify(metadata) + delimiter +
         'Content-Type: ' + contentType + '\r\n' +
         'Content-Transfer-Encoding: base64\r\n' +
-        '\r\n' +  base64Data + 
-        close_delim;
+        '\r\n' +  data + close_delim;
 
     var request = gapi.client.request({
         'path': '/upload/drive/v2/files',
         'method': 'POST',
         'params': {'uploadType': 'multipart'},
         'headers': { 'Content-Type': 'multipart/mixed; boundary="' + boundary + '"' },
-        'body': multipartRequestBody});
+        'body': multipartRequestBody
+    });
    
     request.execute(function(file) {
-        console.log(file)
+        console.log(file);
+	//console.log(multipartRequestBody);
     });
-  }
 }
+
 
 //JavaScript コールバックの作り方 http://qiita.com/39_isao/items/68b3faf8897cbb343d8f
 
@@ -297,16 +269,54 @@ function downloadFile(file, callback) {
     }
 }
 
+function getSnap(){
+    var videoWidth = video.get(0).videoWidth;
+    var videoHeight = video.get(0).videoHeight;
+    console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
+    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+     $('#tmp-canvas').attr("width", videoWidth);
+     $('#tmp-canvas').attr("height", videoHeight);
+    //http://www.html5.jp/tag/elements/video.html
+    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+    var tmpCanvas = $('#tmp-canvas').get(0);
+    var tmpCtx = tmpCanvas.getContext("2d");
+    tmpCtx.drawImage(video.get(0) ,0 ,0);
+    var img = new Image();
+    // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+    img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
+    // アップロードの日時からファイル名を作成
+    var binaryData =  img.src.replace(/^data:image\/(png|jpeg);base64,/,  "");
+    saveJpegM(new Date().getTime() + ".jpg", binaryData);
+    saveJpegS(new Date().getTime() + "_S_.jpg", binaryData);
+    //Canvasで描画した画像を送信してサーバに保存する http://qiita.com/0829/items/a8c98c8f53b2e821ac94
+    //Chromium で Canvas.toBlob が試験的に利用可能になっています　http://qiita.com/uupaa/items/8bc48e904141be9224c4
+    //https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+//    tmpCanvas.toBlob(function(blob) {
+//	saveJpegM(new Date().getTime() + ".jpg", blob);
+//	img.src = URL.createObjectURL(blob);
+//    } ,"image/jpeg", 0.5);
+//    
+    img.onload = function(){
+        img.width = videoWidth / 2;
+        img.height = videoHeight / 2;
+        //縦長なら回転
+        if (videoWidth < videoHeight) {
+            //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
+            //↑表示Canvasは回転するがキャプチャIMGは回転しない
+            //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
+            $(img).css("-webkit-transform", "rotate(270deg)");
+            console.log("rotate.");
+        }
+        console.log("img.width:hight = " + img.width + " : " + img.height);
+        $('#snap-area').append(img);
+    };
+}
 //DOM読み込み完了　初期化
 var google;
 google.maps.event.addDomListener(window, 'load', initialize);
 
 //HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
 var video;
-var tmpCanvas;
-var tmpCtx;
-var videoWidth;// = video.videoWidth;
-var videoHeight;// = video.videoHeight;
 function peerStart(destPeerId) {
     //peer接続されていたら無効
     if (helloAndroid) {
@@ -367,9 +377,10 @@ function peerStart(destPeerId) {
                 setMsgTextArea('stream url: ' + url);
                 // video要素のsrcに設定することで、映像を表示する 	 	
                 video.prop('src', url);
-                tmpCanvas = $('#tmp-canvas');
                 $('#snapshot-btn').click(getSnap);
-                //GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
+	        // 日時からGD画像保存フォルダを作成 new Date().toISOString()
+		gMkdir(new Date().getTime());
+		//GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
                 //if (gamepadNo !== -1) {
                 //setInterval(gamePadListen, 1000 / 30);
                 //}
@@ -379,39 +390,6 @@ function peerStart(destPeerId) {
             });
         });
     });
-}
-
-function getSnap(){ 
-    videoWidth = video.get(0).videoWidth;
-    videoHeight = video.get(0).videoHeight;
-    console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
-    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-   
-    tmpCanvas.attr("width", videoWidth);
-    tmpCanvas.attr("height", videoHeight);
-      //http://www.html5.jp/tag/elements/video.html
-    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-    tmpCtx = tmpCanvas.get(0).getContext("2d");
-    tmpCtx.drawImage(video.get(0) ,0 ,0);
-    var img = new Image();
-    img.src = tmpCanvas.get(0).toDataURL('image/png');
-    // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-    // return canvas.toDataURL("image/jpeg", 0.5);
-    
-    img.onload = function(){
-        img.width = videoWidth / 2;
-        img.height = videoHeight / 2;
-        //縦長なら回転
-        if (videoWidth < videoHeight) {
-            //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
-            //↑表示Canvasは回転するがキャプチャIMGは回転しない
-            //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
-            $(img).css("-webkit-transform", "rotate(270deg)");
-            console.log("rotate.");
-        }
-        console.log("img.width:hight = " + img.width + " : " + img.height);
-        $('#snap-area').append(img);
-    };
 }
 
 //地図クリア
