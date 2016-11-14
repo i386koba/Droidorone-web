@@ -185,7 +185,6 @@ function gMkdir(name) {
         });
     });
 }
-
 //GDアップロードにはSimple、マルチパートがある。
 //Simple upload https://developers.google.com/drive/v2/web/manage-uploads#simple
 //うまくいかなかった。gapi.client.drive.files.insertはフォルダ以外のアップロードはJavascriptで使えない模様。
@@ -203,8 +202,7 @@ function saveJpegS(name, data) {
 	'data': data
     });
     request.execute(function(insert) {
-        console.log( 'saveJpeg : '+ insert.id);
-	console.log(insert);
+ 	console.log(insert);
     });
 }
 //いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
@@ -249,9 +247,18 @@ function saveJpegM(name, data) {
 	//console.log(multipartRequestBody);
     });
 }
-
+ 
 //JavaScript コールバックの作り方 http://qiita.com/39_isao/items/68b3faf8897cbb343d8f
+//https://developers.google.com/drive/v2/reference/files/get
 function downloadFile(file, callback) {
+    var request = gapi.client.drive.files.get({ // fileIdとalt: 'media'を付けると中身が取れる
+        fileId: doc.id,
+        alt: 'media'
+    });
+    request.execute(function(resp){
+        console.log(resp.body); // resp.bodyが中身
+    });
+    
     if (file.downloadUrl) {
         var accessToken = gapi.auth.getToken().access_token;
         var xhr = new XMLHttpRequest();
@@ -274,18 +281,12 @@ function getSnap(){
     var videoHeight = video.get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
     //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-    //$('#tmp-canvas').attr("width", videoWidth);
-    //$('#tmp-canvas').attr("height", videoHeight);
+    $('#tmp-canvas').attr("width", videoWidth);
+    $('#tmp-canvas').attr("height", videoHeight);
     //http://www.html5.jp/tag/elements/video.html
     //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
     var tmpCanvas = $('#tmp-canvas').get(0);
     var tmpCtx = tmpCanvas.getContext("2d");
- 
-    //縦長なら回転
-    if (videoWidth < videoHeight) {
-        tmpCtx.rotate(270 / 180 * Math.PI);
-        tmpCtx.translate(-320, -320);
-    }
     tmpCtx.drawImage(video.get(0) ,0 ,0);
     var img = new Image();
     // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
@@ -295,16 +296,16 @@ function getSnap(){
     //saveJpegS(new Date().getTime() + "_S_.jpg", binaryData);
 
     img.onload = function(){
-        //img.width = videoWidth / 2;
-        //img.height = videoHeight / 2;
+        img.width = videoWidth / 2;
+        img.height = videoHeight / 2;
         //縦長なら回転
-        if (videoWidth < videoHeight) {
+        //if (videoWidth < videoHeight) {
             //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
             //↑表示Canvasは回転するがキャプチャIMGは回転しない
             //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
             //$(img).css("-webkit-transform", "rotate(270deg)");
             //console.log("rotate.");
-        }
+        //}
         //console.log("img.width:hight = " + img.width + " : " + img.height);
         $('#snap-area').append(img);
     };
@@ -855,7 +856,17 @@ function readJData(res) {
                 if (saveDirID !== 0) {
                     gMkdir(jData.time);
                 } else {
-                    //jData.time
+                    //video画面をGD保存
+                    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+                    $('#tmp-canvas').attr("width", video.get(0).videoWidth);
+                    $('#tmp-canvas').attr("height", video.get(0).videoHeight);
+                    //http://www.html5.jp/tag/elements/video.html
+                    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+                    var tmpCanvas = $('#tmp-canvas').get(0);
+                    var tmpCtx = tmpCanvas.getContext("2d");
+                    tmpCtx.drawImage(video.get(0) ,0 ,0);
+                    // アップロードの日時からファイル名を作成,第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+                    saveJpegM(new Date().getTime() + ".jpg", tmpCanvas.toDataURL("image/jpeg", 0.5));
                 }
             }
 
