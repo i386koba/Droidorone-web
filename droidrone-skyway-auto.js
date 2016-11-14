@@ -192,7 +192,7 @@ function gMkdir(name) {
 //gapi.client.requestでないとファイルのアップロードは無理。
 //gapi.client.requestマルチパートアップロードでないとファイル名指定できない。シンプルアップロードではinsertでないとファイル名指定できない。
 //よって、ファイル名を指定したいシンプルアップロードアップデートは無理な模様。
-//drive v2 でファイルupload 
+//drive v2 でファイルupload http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
 function saveJpegS(name, data) {
     var request = gapi.client.drive.files.insert({//insertでないとファイル名指定できない
 	'path': '/upload/drive/v2/files?uploadType=media',
@@ -227,12 +227,14 @@ function saveJpegM(name, data) {
       'mimeType': contentType,
       'parents': [{'id': saveDirID}]//ここで指定
     };
+    //toDataURLのファイルの先頭　data:image/jpeg;base64,を削除
+    var binaryData =  data.replace(/^data:image\/(png|jpeg);base64,/,  "");
     var multipartRequestBody =
         delimiter + 'Content-Type: application/json\r\n\r\n' +
         JSON.stringify(metadata) + delimiter +
         'Content-Type: ' + contentType + '\r\n' +
         'Content-Transfer-Encoding: base64\r\n' +
-        '\r\n' +  data + close_delim;
+        '\r\n' +  binaryData + close_delim;
 
     var request = gapi.client.request({
         'path': '/upload/drive/v2/files',
@@ -248,9 +250,7 @@ function saveJpegM(name, data) {
     });
 }
 
-
 //JavaScript コールバックの作り方 http://qiita.com/39_isao/items/68b3faf8897cbb343d8f
-
 function downloadFile(file, callback) {
     if (file.downloadUrl) {
         var accessToken = gapi.auth.getToken().access_token;
@@ -285,17 +285,9 @@ function getSnap(){
     // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
     img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
     // アップロードの日時からファイル名を作成
-    var binaryData =  img.src.replace(/^data:image\/(png|jpeg);base64,/,  "");
-    saveJpegM(new Date().getTime() + ".jpg", binaryData);
-    saveJpegS(new Date().getTime() + "_S_.jpg", binaryData);
-    //Canvasで描画した画像を送信してサーバに保存する http://qiita.com/0829/items/a8c98c8f53b2e821ac94
-    //Chromium で Canvas.toBlob が試験的に利用可能になっています　http://qiita.com/uupaa/items/8bc48e904141be9224c4
-    //https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
-//    tmpCanvas.toBlob(function(blob) {
-//	saveJpegM(new Date().getTime() + ".jpg", blob);
-//	img.src = URL.createObjectURL(blob);
-//    } ,"image/jpeg", 0.5);
-//    
+    saveJpegM(new Date().getTime() + ".jpg", img.src);
+    //saveJpegS(new Date().getTime() + "_S_.jpg", binaryData);
+
     img.onload = function(){
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
