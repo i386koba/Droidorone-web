@@ -155,7 +155,7 @@ function loadPeerId() {
 //　GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
 //Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
-var saveDirID;
+var saveDirID = 0;
 function gMkdir(name) {
     var request = gapi.client.drive.files.insert({ 
         'path': '/upload/drive/v2/files',
@@ -274,12 +274,18 @@ function getSnap(){
     var videoHeight = video.get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
     //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-     $('#tmp-canvas').attr("width", videoWidth);
-     $('#tmp-canvas').attr("height", videoHeight);
+    //$('#tmp-canvas').attr("width", videoWidth);
+    //$('#tmp-canvas').attr("height", videoHeight);
     //http://www.html5.jp/tag/elements/video.html
     //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
     var tmpCanvas = $('#tmp-canvas').get(0);
     var tmpCtx = tmpCanvas.getContext("2d");
+ 
+    //縦長なら回転
+    if (videoWidth < videoHeight) {
+        tmpCtx.rotate(270 / 180 * Math.PI);
+        tmpCtx.translate(-320, -320);
+    }
     tmpCtx.drawImage(video.get(0) ,0 ,0);
     var img = new Image();
     // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
@@ -289,17 +295,17 @@ function getSnap(){
     //saveJpegS(new Date().getTime() + "_S_.jpg", binaryData);
 
     img.onload = function(){
-        img.width = videoWidth / 2;
-        img.height = videoHeight / 2;
+        //img.width = videoWidth / 2;
+        //img.height = videoHeight / 2;
         //縦長なら回転
         if (videoWidth < videoHeight) {
             //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
             //↑表示Canvasは回転するがキャプチャIMGは回転しない
             //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
-            $(img).css("-webkit-transform", "rotate(270deg)");
-            console.log("rotate.");
+            //$(img).css("-webkit-transform", "rotate(270deg)");
+            //console.log("rotate.");
         }
-        console.log("img.width:hight = " + img.width + " : " + img.height);
+        //console.log("img.width:hight = " + img.width + " : " + img.height);
         $('#snap-area').append(img);
     };
 }
@@ -838,13 +844,19 @@ function readJData(res) {
             if ($('#MapPanOff').prop('checked')) {
                 map.setCenter(rPos);
             }
-            //距離が5m動いたらパス描画
+            //距離が5m動いたらパス描画,データ記録
             //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
             var distance = google.maps.geometry.spherical.computeDistanceBetween(rPos, lastrPos);
             setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
             if (distance > 2) {
                 lastrPos = rPos;
                 rPathDraw(rPos);
+                //記録用GDフォルダ作製
+                if (saveDirID !== 0) {
+                    gMkdir(jData.time);
+                } else {
+                    //jData.time
+                }
             }
 
             //TODO: 自動操縦 (将来的にはAndroidで、）
