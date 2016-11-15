@@ -156,7 +156,7 @@ function loadPeerId() {
 //Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
 var saveDirID = 0;
-function gMkdir(name) {
+function gMkdir(name, url, data) {
     var request = gapi.client.drive.files.insert({ 
         'path': '/upload/drive/v2/files',
         'method': 'POST',
@@ -182,6 +182,7 @@ function gMkdir(name) {
         perRequest.execute(function(resp) { 
 	    console.log('permissions:Done');
 	    console.log(resp);
+	    saveJpegM(name + ".jpg", url, data);
         });
     });
 }
@@ -192,19 +193,7 @@ function gMkdir(name) {
 //gapi.client.requestマルチパートアップロードでないとファイル名指定できない。シンプルアップロードではinsertでないとファイル名指定できない。
 //よって、ファイル名を指定したいシンプルアップロードアップデートは無理な模様。
 //drive v2 でファイルupload http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
-function saveJpegS(name, data) {
-    var request = gapi.client.drive.files.insert({//insertでないとファイル名指定できない
-	'path': '/upload/drive/v2/files?uploadType=media',
-        'method': 'POST',
-	"title": name,
-        "parents": [{"id": saveDirID}],
-        "mimeType": "image/jpeg",
-	'data': data
-    });
-    request.execute(function(insert) {
- 	console.log(insert);
-    });
-}
+
 //いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
 //JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
 //Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c  
@@ -218,15 +207,16 @@ const boundary = '-------314159265358979323846';
 const delimiter = "\r\n--" + boundary + "\r\n";
 const close_delim = "\r\n--" + boundary + "--";
 
-function saveJpegM(name, data) {
+function saveJpegM(name, url, data) {
     var contentType = 'image/jpeg'; // 'application/octet-stream';
     var metadata = {
       'title': name,
       'mimeType': contentType,
-      'parents': [{'id': saveDirID}]//ここで指定
+      'parents': [{'id': saveDirID}], //親フォルダここで指定
+      'description' : data
     };
     //toDataURLのファイルの先頭　data:image/jpeg;base64,を削除
-    var binaryData =  data.replace(/^data:image\/(png|jpeg);base64,/,  "");
+    var binaryData = url.replace(/^data:image\/(png|jpeg);base64,/,  "");
     var multipartRequestBody =
         delimiter + 'Content-Type: application/json\r\n\r\n' +
         JSON.stringify(metadata) + delimiter +
@@ -247,36 +237,9 @@ function saveJpegM(name, data) {
 	//console.log(multipartRequestBody);
     });
 }
- 
-//JavaScript コールバックの作り方 http://qiita.com/39_isao/items/68b3faf8897cbb343d8f
-//https://developers.google.com/drive/v2/reference/files/get
-function downloadFile(file, callback) {
-    var request = gapi.client.drive.files.get({ // fileIdとalt: 'media'を付けると中身が取れる
-        fileId: doc.id,
-        alt: 'media'
-    });
-    request.execute(function(resp){
-        console.log(resp.body); // resp.bodyが中身
-    });
-    
-    if (file.downloadUrl) {
-        var accessToken = gapi.auth.getToken().access_token;
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', file.downloadUrl);
-        xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
-        xhr.onload = function () {
-            callback(xhr.responseText);
-        };
-        xhr.onerror = function () {
-            callback(null);
-        };
-        xhr.send();
-    } else {
-        callback(null);
-    }
-}
 
 function getSnap(){
+ 
     var videoWidth = video.get(0).videoWidth;
     var videoHeight = video.get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
@@ -291,14 +254,17 @@ function getSnap(){
     var img = new Image();
     // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
     img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
-    // アップロードの日時からファイル名を作成
-    saveJpegM(new Date().getTime() + ".jpg", img.src);
-    //saveJpegS(new Date().getTime() + "_S_.jpg", binaryData);
+    // 日時からGD画像保存フォルダを作成 new Date().toISOString()
+    if (saveDirID === 0 ) {
+	gMkdir(new Date().getTime(), img.src, $("#JSON").text());
+    } else {
+	saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
+    }
 
     img.onload = function(){
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
-        //縦長なら回転
+        //縦長なら回転 
         //if (videoWidth < videoHeight) {
             //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
             //↑表示Canvasは回転するがキャプチャIMGは回転しない
@@ -376,9 +342,6 @@ function peerStart(destPeerId) {
                 setMsgTextArea('stream url: ' + url);
                 // video要素のsrcに設定することで、映像を表示する 	 	
                 video.prop('src', url);
-                $('#snapshot-btn').click(getSnap);
-	        // 日時からGD画像保存フォルダを作成 new Date().toISOString()
-		gMkdir(new Date().getTime());
 		//GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
                 //if (gamepadNo !== -1) {
                 //setInterval(gamePadListen, 1000 / 30);
@@ -598,6 +561,8 @@ function initialize() {
 	//rPath.push(sPos);
     });
     video = $('#android-video');
+    //テスト
+    $('#snapshot-btn').click(getSnap);
 }
 
 //マウスによるPAD操作の描画
@@ -852,21 +817,22 @@ function readJData(res) {
             if (distance > 2) {
                 lastrPos = rPos;
                 rPathDraw(rPos);
-                //記録用GDフォルダ作製
-                if (saveDirID !== 0) {
-                    gMkdir(jData.time);
+ 		//video画面をGD保存
+		//attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+		$('#tmp-canvas').attr("width", video.get(0).videoWidth);
+		$('#tmp-canvas').attr("height", video.get(0).videoHeight);
+		//http://www.html5.jp/tag/elements/video.html
+		//videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+		var tmpCanvas = $('#tmp-canvas').get(0);
+		var tmpCtx = tmpCanvas.getContext("2d");
+		tmpCtx.drawImage(video.get(0) ,0 ,0);
+		//第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+		var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
+		//記録用GDフォルダ作製
+                if (saveDirID === 0) {
+                    gMkdir(jData.time, url, res);
                 } else {
-                    //video画面をGD保存
-                    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-                    $('#tmp-canvas').attr("width", video.get(0).videoWidth);
-                    $('#tmp-canvas').attr("height", video.get(0).videoHeight);
-                    //http://www.html5.jp/tag/elements/video.html
-                    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-                    var tmpCanvas = $('#tmp-canvas').get(0);
-                    var tmpCtx = tmpCanvas.getContext("2d");
-                    tmpCtx.drawImage(video.get(0) ,0 ,0);
-                    // アップロードの日時からファイル名を作成,第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-                    saveJpegM(new Date().getTime() + ".jpg", tmpCanvas.toDataURL("image/jpeg", 0.5));
+		    saveJpegM(jData.time + ".jpg", url, res);
                 }
             }
 
@@ -950,17 +916,18 @@ function readJData(res) {
             lastBtR = btr;
         }
     }
-    //Videoの向きを判断して回転
+    //Videoの向きを判断して回転 
+    //2016.11.15 Android縦専用にした。
     //縦長になった。
-    if (vRotate === 0 && video.get(0).videoHeight > video.get(0).videoWidth ){
-        video.css("-webkit-transform", "rotate(270deg)");
-        vRotate = 270;
-    }
-    //横長になった
-    if (vRotate === 270 && video.get(0).videoHeight < video.get(0).videoWidth ){
-        video.css("-webkit-transform", "rotate(0deg)");
-        vRotate = 0;
-    }
+//    if (vRotate === 0 && video.get(0).videoHeight > video.get(0).videoWidth ){
+//        video.css("-webkit-transform", "rotate(270deg)");
+//        vRotate = 270;
+//    }
+//    //横長になった
+//    if (vRotate === 270 && video.get(0).videoHeight < video.get(0).videoWidth ){
+//        video.css("-webkit-transform", "rotate(0deg)");
+//        vRotate = 0;
+//    }
 }
 
 function setMsgTextArea(str) {
