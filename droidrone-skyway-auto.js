@@ -292,8 +292,8 @@ function peerStart(destPeerId) {
             if (helloAndroid === false) {
                 setMsgTextArea('From Android: ' + res);
                 // Call-IDのメッセージを送信
-                peerdConn.send(peer.id);
-                setMsgTextArea('Send To Android: ' + peer.id);
+                //peerdConn.send(peer.id); IDを送らなくてもAndroidでIDわかる
+                //setMsgTextArea('Send To Android: ' + peer.id);
                 helloAndroid = true;
             } else {
                 readJData(res);
