@@ -7,8 +7,7 @@
 // SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
 var apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
 var peer;
-//media用peer constructor
-var peerM;
+
 var peerdConn = null; // 接続したコネを保存しておく変数
 //2015.06
 var helloAndroid = false;
@@ -35,7 +34,6 @@ function handleAuth() {
     //既存のPeer再接続（Android再起動の場合）
     if (helloAndroid) {
         peer.destroy();
-        peerM.destroy();
         helloAndroid = false;
     }
     peer = new Peer({key: apiKey, debug: 3});
@@ -48,17 +46,7 @@ function handleAuth() {
     });
     peer.on('open', function () {
         // - 自分のIDはpeerオブジェクトのidプロパティに存在する
-        var connID = peer.id;
-        setMsgTextArea('My ConnID : ' + connID);
-//        peer.listAllPeers(function (peerArray) {
-//            for (var i = 0; i < peerArray.length; i++) {
-//                var idStr = peerArray[i];
-//                if (idStr !== connID) {
-//                    $('#peers').append('<option>' + peerArray[i] + '</option>');
-//                    setMsgTextArea('(' + i + ') listID : ' + peerArray[i]);
-//                }
-//            }
-//        });
+        setMsgTextArea('My PeerID : ' + peer.id);
     });
     //
     gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES, immediate: false}, handleAuthResult);
@@ -85,7 +73,6 @@ function handleAuthResult(authResult) {
 //終了時
 $(window).on("beforeunload", function () {
     peer.destroy();
-    peerM.destroy();
 });
 
 var skyWayFolderID = "";
@@ -135,7 +122,7 @@ function loadPeerId() {
                         console.log('Description: ' + resp.description);
                         console.log('MIME type: ' + resp.mimeType);
                         //peerStart(resp.description);
-                        setMsgTextArea("peer.id:" + resp.description);
+                        setMsgTextArea("Android peer.id:" + resp.description);
                         //Peer ID 接続
                         peerStart(resp.description);
                     });
@@ -239,7 +226,6 @@ function saveJpegM(name, url, data) {
 }
 
 function getSnap(){
- 
     var videoWidth = video.get(0).videoWidth;
     var videoHeight = video.get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
@@ -300,56 +286,42 @@ function peerStart(destPeerId) {
     // 接続が完了した場合のイベントの設定
     peerdConn.on("open", function () {
         setMsgTextArea('Open　connect: ' + peerdConn.peer);
-        //メディアストリームPeer
-        peerM = new Peer({key: apiKey, debug: 3});
-        //PeerM-err
-        peerM.on('error', function (err) {
-            setMsgTextArea('PeerM-err : ' + err);
+        // メッセージ受信イベントの設定
+        peerdConn.on("data", function (res) {
+            //接続初回
+            if (helloAndroid === false) {
+                setMsgTextArea('From Android: ' + res);
+                // Call-IDのメッセージを送信
+                peerdConn.send(peer.id);
+                setMsgTextArea('Send To Android: ' + peer.id);
+                helloAndroid = true;
+            } else {
+                readJData(res);
+            }
         });
-        peerM.on('close', function () {
-            peerM.destroy();
-            setMsgTextArea('peerM Close: : ');
-        });
-        peerM.on('open', function () {
-            // - 自分のIDはpeerオブジェクトのidプロパティに存在する
-            var callID = peerM.id;
-            setMsgTextArea('My CallID : ' + callID); // Call-IDのメッセージを送信
-            // メッセージ受信イベントの設定
-            peerdConn.on("data", function (res) {
-                //接続初回
-                if (helloAndroid === false) {
-                    setMsgTextArea('From Android: ' + res);
-                    // Call-IDのメッセージを送信
-                    peerdConn.send(callID);
-                    setMsgTextArea('To Android: ' + callID);
-                    helloAndroid = true;
-                } else {
-                    readJData(res);
-                }
-            });
-        });
-        peerM.on('call', function (call) {
-            // - 相手のIDはCallオブジェクトのpeerプロパティに存在する
-            setMsgTextArea('Call from : ' + call.peer);
-            call.answer();
-            //呼び出しに応答する時のMediaStreamは必須ではありません。もし応答時にMediaStreamをセットしなければ、一方向の通話が確立されます。
-            setMsgTextArea('call Answer null');
+    });
+    
+    peer.on('call', function (call) {
+        // - 相手のIDはCallオブジェクトのpeerプロパティに存在する
+        setMsgTextArea('Call from : ' + call.peer);
+        call.answer();
+        //呼び出しに応答する時のMediaStreamは必須ではありません。もし応答時にMediaStreamをセットしなければ、一方向の通話が確立されます。
+        setMsgTextArea('call Answer null');
 
-            call.on('stream', function (stream) {
-                // 映像ストリームオブジェクトをURLに変換する
-                // - video要素に表示できる形にするため変換している
-                var url = window.URL.createObjectURL(stream);
-                setMsgTextArea('stream url: ' + url);
-                // video要素のsrcに設定することで、映像を表示する 	 	
-                video.prop('src', url);
-		//GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
-                //if (gamepadNo !== -1) {
-                //setInterval(gamePadListen, 1000 / 30);
-                //}
-            });
-            call.on('error', function (err) {
-                setMsgTextArea('call-err : ' + err);
-            });
+        call.on('stream', function (stream) {
+            // 映像ストリームオブジェクトをURLに変換する
+            // - video要素に表示できる形にするため変換している
+            var url = window.URL.createObjectURL(stream);
+            setMsgTextArea('stream url: ' + url);
+            // video要素のsrcに設定することで、映像を表示する 	 	
+            video.prop('src', url);
+            //GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
+            //if (gamepadNo !== -1) {
+            //setInterval(gamePadListen, 1000 / 30);
+            //}
+        });
+        call.on('error', function (err) {
+            setMsgTextArea('call-err : ' + err);
         });
     });
 }
