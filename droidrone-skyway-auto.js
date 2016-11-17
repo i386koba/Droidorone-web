@@ -5,7 +5,7 @@
 //SkyWayに関するドキュメントとサンプルアプリ
 //https://nttcom.github.io/skyway/documentation.html
 // SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
-var apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
+const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
 var peer;
 
 var peerdConn = null; // 接続したコネを保存しておく変数
@@ -25,8 +25,9 @@ var lastCommand = "";
 //https://developers.google.com/drive/v2/web/quickstart/js
 // Your Client ID can be retrieved from your project in the Google
 // Developer Console, https://console.developers.google.com
-var CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
-var SCOPES = ['https://www.googleapis.com/auth/drive'];
+const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
+const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
 var gapi;
 
 // Initiate auth flow in response to user clicking authorize button.
@@ -43,6 +44,7 @@ function handleAuth() {
     peer.on('close', function () {
         peer.destroy();
         setMsgTextArea('peer Close: : ');
+        $("#authorizeButton").prop("disabled", false);
     });
     peer.on('open', function () {
         // - 自分のIDはpeerオブジェクトのidプロパティに存在する
@@ -125,6 +127,8 @@ function loadPeerId() {
                         setMsgTextArea("Android peer.id:" + resp.description);
                         //Peer ID 接続
                         peerStart(resp.description);
+                        //ボタンを無効にする
+                        $("#authorizeButton").prop("disabled", true);
                     });
 
                 } else {
@@ -153,6 +157,7 @@ function gMkdir(name, url, data) {
     });
     request.execute(function(insert) {
         saveDirID = insert.id;
+        console.log("application/vnd.google-apps.folder");
         console.log(insert);
 	setMsgTextArea('JpegSaveDirID :' + saveDirID);
         //permissions change(共有（読み出し））
@@ -167,7 +172,7 @@ function gMkdir(name, url, data) {
             'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
         });
         perRequest.execute(function(resp) { 
-	    console.log('permissions:Done');
+	    console.log('folder permissions:Done');
 	    console.log(resp);
 	    saveJpegM(name + ".jpg", url, data);
         });
@@ -179,6 +184,7 @@ function gMkdir(name, url, data) {
 //gapi.client.requestでないとファイルのアップロードは無理。
 //gapi.client.requestマルチパートアップロードでないとファイル名指定できない。シンプルアップロードではinsertでないとファイル名指定できない。
 //よって、ファイル名を指定したいシンプルアップロードアップデートは無理な模様。
+//application/vnd.google-apps.photo でインサートできるか？
 //drive v2 でファイルupload http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
 
 //いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
@@ -220,11 +226,46 @@ function saveJpegM(name, url, data) {
     });
    
     request.execute(function(file) {
+        console.log('image/jpeg');
         console.log(file);
 	//console.log(multipartRequestBody);
     });
 }
 
+function mapLink(name, data) {
+    var request = gapi.client.drive.files.insert({ 
+        'path': '/upload/drive/v2/files',
+        'method': 'POST',
+        "title": name,
+        "parents": [{"id": skyWayFolderID}],
+        //"parents": [{"id": MapLinkGDFolderID}],
+        //https://developers.google.com/drive/v3/web/mime-types
+        "mimeType": "application/vnd.google-apps.file",
+        'description' : data
+    });
+    console.log('mapLink:request.execute.'); 
+    request.execute(function(insert) {
+        var fileID = insert.id;
+        console.log('mapLink:' + fileID);
+        console.log(insert);
+	setMsgTextArea('mapLink:' + fileID);
+        //permissions change(共有（読み出し））
+//        var body = {
+//            //'value': value,//mailAddress
+//            'type': 'anyone',
+//            'role': 'reader'
+//        };
+//        var perRequest = gapi.client.drive.permissions.insert({
+//            'fileId': fileID,
+//            'resource': body,
+//            'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
+//        });
+//        perRequest.execute(function(resp) { 
+//	    console.log('file permissions:Done');
+//	    console.log(resp);
+//        });
+    });
+}
 function getSnap(){
     var videoWidth = video.get(0).videoWidth;
     var videoHeight = video.get(0).videoHeight;
@@ -246,7 +287,7 @@ function getSnap(){
     } else {
 	saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
     }
-
+    mapLink("test", "disTest");
     img.onload = function(){
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
@@ -291,9 +332,6 @@ function peerStart(destPeerId) {
             //接続初回
             if (helloAndroid === false) {
                 setMsgTextArea('From Android: ' + res);
-                // Call-IDのメッセージを送信
-                //peerdConn.send(peer.id); IDを送らなくてもAndroidでIDわかる
-                //setMsgTextArea('Send To Android: ' + peer.id);
                 helloAndroid = true;
             } else {
                 readJData(res);
@@ -502,7 +540,10 @@ function initialize() {
     $("#btConn").click(function () {
         commandStr = "btConnect";
     });
-
+   //switchCamera Click
+    $("#camSW").click(function () {
+        commandStr = "switchCamera";
+    });
     //videoRotate https://sites.google.com/site/westinthefareast/home/html5/css3videorotate
     //http://www.buildinsider.net/web/jqueryref/005
     $("#videoRotate270").click(function () {
