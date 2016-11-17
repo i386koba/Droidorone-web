@@ -6,8 +6,16 @@
 //https://nttcom.github.io/skyway/documentation.html
 // SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
 const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
-var peer;
+//Drive REST API JavaScript Quickstart
+//https://developers.google.com/drive/v2/web/quickstart/js
+// Your Client ID can be retrieved from your project in the Google
+// Developer Console, https://console.developers.google.com
+const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
+const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
 
+var gapi;
+var peer;
 var peerdConn = null; // 接続したコネを保存しておく変数
 //2015.06
 var helloAndroid = false;
@@ -21,14 +29,7 @@ var xRange = 400;
 var xCenter = 1500;
 var commandStr = "";
 var lastCommand = "";
-//Drive REST API JavaScript Quickstart
-//https://developers.google.com/drive/v2/web/quickstart/js
-// Your Client ID can be retrieved from your project in the Google
-// Developer Console, https://console.developers.google.com
-const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
-const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
-var gapi;
+
 
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
@@ -176,6 +177,24 @@ function gMkdir(name, url, data) {
 	    console.log(resp);
 	    saveJpegM(name + ".jpg", url, data);
         });
+        //全ユーザーの記録先をフォルダファイルで記録
+        //（gapi.client.drive.files.insertがJSでフォルダのみの模様）
+        var json = eval('(' + data + ')');
+        var recRequest = gapi.client.drive.files.insert({ 
+            'path': '/upload/drive/v2/files',
+            'method': 'POST',
+            "title": json.lat + ':' + json.lng,
+            "parents": [{"id": MapLinkGDFolderID}],
+            //https://developers.google.com/drive/v3/web/mime-types
+            "mimeType": "application/vnd.google-apps.folder",
+            'description' : saveDirID
+        });
+        recRequest.execute(function(insert) {
+            var fileID = insert.id;
+            console.log('mapLink:' + fileID);
+            console.log(insert);
+            setMsgTextArea('mapLink:' + fileID);
+        });
     });
 }
 //GDアップロードにはSimple、マルチパートがある。
@@ -232,40 +251,6 @@ function saveJpegM(name, url, data) {
     });
 }
 
-function mapLink(name, data) {
-    var request = gapi.client.drive.files.insert({ 
-        'path': '/upload/drive/v2/files',
-        'method': 'POST',
-        "title": name,
-        "parents": [{"id": skyWayFolderID}],
-        //"parents": [{"id": MapLinkGDFolderID}],
-        //https://developers.google.com/drive/v3/web/mime-types
-        "mimeType": "application/vnd.google-apps.file",
-        'description' : data
-    });
-    console.log('mapLink:request.execute.'); 
-    request.execute(function(insert) {
-        var fileID = insert.id;
-        console.log('mapLink:' + fileID);
-        console.log(insert);
-	setMsgTextArea('mapLink:' + fileID);
-        //permissions change(共有（読み出し））
-//        var body = {
-//            //'value': value,//mailAddress
-//            'type': 'anyone',
-//            'role': 'reader'
-//        };
-//        var perRequest = gapi.client.drive.permissions.insert({
-//            'fileId': fileID,
-//            'resource': body,
-//            'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
-//        });
-//        perRequest.execute(function(resp) { 
-//	    console.log('file permissions:Done');
-//	    console.log(resp);
-//        });
-    });
-}
 function getSnap(){
     var videoWidth = video.get(0).videoWidth;
     var videoHeight = video.get(0).videoHeight;
@@ -287,7 +272,7 @@ function getSnap(){
     } else {
 	saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
     }
-    mapLink("test", "disTest");
+    //mapLink("test", "disTest");
     img.onload = function(){
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
