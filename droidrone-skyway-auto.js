@@ -56,9 +56,9 @@ function handleAuth() {
     return false;
 }
 //Check if current user has authorized this application.
-function checkAuth() {
-    gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(' '), 'immediate': true}, handleAuthResult);
-}
+//function checkAuth() {
+//    gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(' '), 'immediate': true}, handleAuthResult);
+//}
 
 function handleAuthResult(authResult) {
     var authButton = document.getElementById('authorizeButton');
@@ -180,10 +180,12 @@ function gMkdir(name, url, data) {
         //全ユーザーの記録先をフォルダファイルで記録
         //（gapi.client.drive.files.insertがJSでフォルダのみの模様）
         var json = eval('(' + data + ')');
+        var user = 'test';
         var recRequest = gapi.client.drive.files.insert({ 
             'path': '/upload/drive/v2/files',
             'method': 'POST',
-            "title": json.lat + ':' + json.lng,
+            //ユーザー名には、アンパサンド（&）、等号（=）、山かっこ（<、>）、プラス記号（+）、カンマ（,）を使用できません。また、1 行に複数のピリオド（.）を含めることはできません。
+            "title": json.lat + ',' + json.lng + ',' + user,
             "parents": [{"id": MapLinkGDFolderID}],
             //https://developers.google.com/drive/v3/web/mime-types
             "mimeType": "application/vnd.google-apps.folder",

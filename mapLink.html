@@ -12,11 +12,22 @@ From  https://github.com/nttcom/SkyWay-JS-Sample/tree/master/p2p_broadcast
   <meta charset="utf-8">
   <title>DoroiDrone Uesr Map</title>
   <link rel="shortcut icon" href="http://www.cirlution.com/favicon.ico">
-  <!--link rel="stylesheet" href="style.css"-->
-  <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
-  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCYgefNHuojh9xFK6EAWPDjQc8-x1bg4o0&amp;libraries=geometry"></script>
-  <script type="text/javascript" src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
   
+  <!--link rel="stylesheet" href="style.css"
+  Google Map を全画面表示する http://wot.pro.tok2.com/web/api/gmap/view03.html
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <style type="text/css">
+    html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+    }
+  </style>
+  <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  <script type="text/javascript" src="https://apis.google.com/js/client.js"></script>
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCYgefNHuojh9xFK6EAWPDjQc8-x1bg4o0&amp;libraries=geometry"></script>
+
 <script>
 //Drive REST API JavaScript Quickstart
 //https://developers.google.com/drive/v2/web/quickstart/js
@@ -25,154 +36,69 @@ From  https://github.com/nttcom/SkyWay-JS-Sample/tree/master/p2p_broadcast
 const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
-//DOM読み込み完了　初期化
-var google;
 var gapi;
-google.maps.event.addDomListener(window, 'load', function {
- 
-    var requestFolder = gapi.client.drive.files.list({
-       q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'and trashed = false"
-    });
-    //Search for Folder
-    requestFolder.execute(function (resp) {
-        setMsgTextArea("Google drive load PeerId file.");
-        //appendPre('Files:');
-        var files = resp.items;
-        if (files && files.length > 0) {
-            for (var i = 0; i < files.length; i++) {
-                var file = files[i];
-                if (file.title === SKYWAYRC_DIR) {
-                    skyWayFolderID = file.id;
-                    setMsgTextArea("Folder:" + file.title);
-                } //else { //setMsgTextArea(file.title ); }
-            }
-            var requestFile = gapi.client.drive.files.list({
-                q: "'" + skyWayFolderID + "' in parents and mimeType = 'text/plain'"
-            });
-            //Search for Files
-            requestFile.execute(function (resp) {
-                //appendPre('Files:');
-                var files = resp.items;
-                if (files && files.length > 0) {
-                    for (var i = 0; i < files.length; i++) {
-                        var file = files[i];
-                        if (file.title === SKYWAY_ANDROID_ID) {
-                            skyWayIdfileID = file.id;
-                            setMsgTextArea("File:" + file.title);
-                            //downloadFile(file, function (responseText){
-                            //setMsgTextArea("download peer.id:" + responseText);
-                            //});
+var google;
+//DOM読み込み完了　初期化
+google.maps.event.addDomListener(window, 'load', function() {
+    var map;
+    //日本中心に地図
+    var mapOptions = {
+       zoom: 2,
+       center: new google.maps.LatLng(35, 138), 
+       mapTypeId: google.maps.MapTypeId.ROADMAP,
+       //mapTypeId: google.maps.MapTypeId.TERRAIN
+       noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
+    };
+    map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+    // Check if current user has authorized this application.
+    gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES, immediate: false}, function(authResult) {
+        if (authResult && !authResult.error) {
+            // Access token has been successfully retrieved, requests can be sent to the API.
+            gapi.client.load('drive', 'v2', function () {
+                //https://developers.google.com/drive/v2/reference/files/list
+                var requestFolder = gapi.client.drive.files.list({
+                   q: "'" + MapLinkGDFolderID + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+                });
+                requestFolder.execute(function (resp) {
+                    console.log("Google drive map link load folder.");
+                    //appendPre('Files:');
+                    var folders = resp.items;
+                    if (folders && folders.length > 0) {
+                        for (var i = 0; i < folders.length; i++) {
+                            var folder = folders[i];
+                            console.log("name:" + folder.title);
+                            console.log("description:" + folder.description);
+                            var latlng = folder.title.split(',');
+                            //https://developers.google.com/maps/documentation/javascript/markers?hl=ja
+                            var marker = new google.maps.Marker({
+                                position:  new google.maps.LatLng(latlng[0], latlng[1]),
+                                title:"Hello World!"
+                            });
+                            // To add the marker to the map, call setMap();
+                            marker.setMap(map);
                         }
                     }
-                    var requestIdGet = gapi.client.drive.files.get({'fileId': skyWayIdfileID});
-                    requestIdGet.execute(function (resp) {
-                        console.log('Title: ' + resp.title);
-                        console.log('Description: ' + resp.description);
-                        console.log('MIME type: ' + resp.mimeType);
-                        //peerStart(resp.description);
-                        setMsgTextArea("Android peer.id:" + resp.description);
-                        //Peer ID 接続
-                        peerStart(resp.description);
-                        //ボタンを無効にする
-                        $("#authorizeButton").prop("disabled", true);
-                    });
-
-                } else {
-                    setMsgTextArea("SkyWayAndroid.id not found:");
-                }
-            });
-        } else {
-            setMsgTextArea('SkyWayRC-folder not found:');
-        }
-    }); 
-     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
-    //var lineSymbol = {
-        //: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
-    //};
-    rPoly = new google.maps.Polyline({
-        strokeColor: '#0000FF',
-        strokeOpacity: 1.0,
-        strokeWeight: 3,
-        //icons: [{ 最後にしかマーカーされない
-            //icon: lineSymbol,
-            //offset: '100%'
-        //}],
-        zIndex: 1// 重なりの優先値(z-index)
-    });
-    //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#PolylineOptions
-    sPoly = new google.maps.Polyline({
-        strokeColor: '#00FFFF',
-        strokeOpacity: 1.0,
-        strokeWeight: 2,
-        editable: true,
-        zIndex: 1// 重なりの優先値(z-index)
-    });
- var gPos = new google.maps.LatLng(jData.lat, jData.lng);
-        //GPS受信初回、地図,マーカーなど定義
-             var mapOptions = {
-                zoom: 18,
-                center: gPos, mapTypeId: google.maps.MapTypeId.ROADMAP,
-                //mapTypeId: google.maps.MapTypeId.TERRAIN
-                noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
-            };
-            map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-            //GPSマーカー　赤丸
-            gpsMarker = new google.maps.Marker({
-                icon: {path: google.maps.SymbolPath.CIRCLE,
-                    scale: 3,
-                    strokeColor: '#FF0000'
-                },
-                map: map,
-                zIndex: 1// 重なりの優先値(z-index)
-            });
-
-            //現在位置指定マーカー　青丸
-            sMarker = new google.maps.Marker({
-                icon: {path: google.maps.SymbolPath.CIRCLE,
-                    scale: 3,
-                    strokeColor: '#0000FF'
-                },
-                draggable: true, // ドラッグ可能にする
-                map: map,
-                position: gPos,
-                zIndex: 3// 重なりの優先値(z-index)
-            });
-            //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
-            initInfoWin = new google.maps.InfoWindow({
-                content: '青丸アイコンを現在地にドラッグしてください。'
-            });
-            initInfoWin.open(map, sMarker);
-
-            ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
-            // マーカーのドロップ（ドラッグ終了）時のイベント
-            google.maps.event.addListener(sMarker, 'dragend', function (ev) {
-                sDragend = true;
-                // イベントの引数evの、プロパティ.latLngが緯度経度。
-                sPos = ev.latLng;
-                initInfoWin.close();
-                checkInfoWin.open(map, sMarker);
-                //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
-                google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
-                    sDragend = false;
+                }); 
+                //サインインユーザー名テスト
+                //https://developers.google.com/api-client-library/javascript/samples/samples#authorizing-and-making-authorized-requests
+                gapi.client.people.people.get(
+                        {resourceName: 'people/me'}
+                ).then(function(resp) {
+                        console.log('Hello, ' + resp.result.names[0].givenName);
+                }, function(reason) {
+                        console.log('Error: ' + reason.result.error.message);
                 });
             });
-            //移動場所設定　PATH
-            google.maps.event.addListener(map, 'click', function (ev) {
-                if (!sDragend && !$('#autoOff').prop('checked')) {
-                    var setPos = ev.latLng;
-                    var sPath = sPoly.getPath();
-                    sPath.push(setPos);
-                    sPoly.setMap(map);
-                }
-            });
-            //GPS起動確認
-            onGps = true;
+        } else {
+            console.log("Google authResult.error.");
         }
+    });
+});
 
 </script>
 
 </head>
 <body>
-<div style="width:800px; height:800px; background-color: #AAA" id="map-canvas"></div>
+<div style="height:100%; background-color: #AAA" id="map-canvas"></div>
 </body>
 </html>
