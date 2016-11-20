@@ -11,7 +11,9 @@ const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
 // Your Client ID can be retrieved from your project in the Google
 // Developer Console, https://console.developers.google.com
 const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
+//google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
+//OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
+const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
 const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
 
 var gapi;
@@ -29,7 +31,6 @@ var xRange = 400;
 var xCenter = 1500;
 var commandStr = "";
 var lastCommand = "";
-
 
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
@@ -52,13 +53,15 @@ function handleAuth() {
         setMsgTextArea('My PeerID : ' + peer.id);
     });
     //
-    gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES, immediate: false}, handleAuthResult);
+    gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES.join(" "), immediate: false}, handleAuthResult);
     return false;
 }
 //Check if current user has authorized this application.
 //function checkAuth() {
 //    gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(' '), 'immediate': true}, handleAuthResult);
 //}
+var googleName;
+var googleID;
 
 function handleAuthResult(authResult) {
     var authButton = document.getElementById('authorizeButton');
@@ -68,7 +71,7 @@ function handleAuthResult(authResult) {
     } else {
         // No access token could be retrieved, show the button to start the authorization flow.
         authButton.onclick = function () {
-            gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES, 'immediate': false}, handleAuthResult);
+            gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(" "), 'immediate': false}, handleAuthResult);
         };
     }
 }
@@ -140,6 +143,16 @@ function loadPeerId() {
             setMsgTextArea('SkyWayRC-folder not found:');
         }
     });
+    //How to get user email from google plus oauth http://stackoverflow.com/questions/11606101/how-to-get-user-email-from-google-plus-oauth
+     var request = gapi.client.request({
+         'path': '/oauth2/v1/userinfo',//?alt=json',
+         'method': 'GET'
+     });
+     request.execute(function(resp) {
+         console.log(resp);
+         googleName = resp.name;
+         googleID = resp.id;
+     });
 }
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
 //skyWayFolderIDの下に読み込み共有の経路ファイル、写真用のTime番号のフォルダ作る。
@@ -180,16 +193,15 @@ function gMkdir(name, url, data) {
         //全ユーザーの記録先をフォルダファイルで記録
         //（gapi.client.drive.files.insertがJSでフォルダのみの模様）
         var json = eval('(' + data + ')');
-        var user = 'test';
         var recRequest = gapi.client.drive.files.insert({ 
             'path': '/upload/drive/v2/files',
             'method': 'POST',
             //ユーザー名には、アンパサンド（&）、等号（=）、山かっこ（<、>）、プラス記号（+）、カンマ（,）を使用できません。また、1 行に複数のピリオド（.）を含めることはできません。
-            "title": json.lat + ',' + json.lng + ',' + user,
+            "title": [json.lat, json.lng, googleName].join(','),
             "parents": [{"id": MapLinkGDFolderID}],
             //https://developers.google.com/drive/v3/web/mime-types
             "mimeType": "application/vnd.google-apps.folder",
-            'description' : saveDirID
+            'description' : [saveDirID, googleID].join(',')
         });
         recRequest.execute(function(insert) {
             var fileID = insert.id;
@@ -332,7 +344,6 @@ function peerStart(destPeerId) {
         call.answer();
         //呼び出しに応答する時のMediaStreamは必須ではありません。もし応答時にMediaStreamをセットしなければ、一方向の通話が確立されます。
         setMsgTextArea('call Answer null');
-
         call.on('stream', function (stream) {
             // 映像ストリームオブジェクトをURLに変換する
             // - video要素に表示できる形にするため変換している
@@ -569,7 +580,6 @@ function initialize() {
 function  padDraw() {
     // クリア
     mouseg.clearRect(0, 0, pCanvas.width, pCanvas.height);
-
     //カメラ位置　横方向センターか？
     if ($("#xCamera").val() !== $("#xCCenter").val()) {
         //if (peerdConn) {
@@ -828,11 +838,14 @@ function readJData(res) {
 		tmpCtx.drawImage(video.get(0) ,0 ,0);
 		//第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
 		var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
+                jData.lat = rPos.lat();
+                jData.lng = rPos.lng();
+                var rJson = JSON.stringify(jData);
 		//記録用GDフォルダ作製
                 if (saveDirID === 0) {
-                    gMkdir(jData.time, url, res);
+                    gMkdir(jData.time, url, rJson);
                 } else {
-		    saveJpegM(jData.time + ".jpg", url, res);
+		    saveJpegM(jData.time + ".jpg", url, rJson);
                 }
             }
 

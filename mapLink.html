@@ -24,7 +24,9 @@ From  https://github.com/nttcom/SkyWay-JS-Sample/tree/master/p2p_broadcast
 	padding: 0;
     }
   </style>
+  <!--
   <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  -->
   <script type="text/javascript" src="https://apis.google.com/js/client.js"></script>
   <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCYgefNHuojh9xFK6EAWPDjQc8-x1bg4o0&amp;libraries=geometry"></script>
 
@@ -38,16 +40,17 @@ const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
 var gapi;
 var google;
+var map;
+
 //DOM読み込み完了　初期化
 google.maps.event.addDomListener(window, 'load', function() {
-    var map;
     //日本中心に地図
     var mapOptions = {
        zoom: 2,
        center: new google.maps.LatLng(35, 138), 
        mapTypeId: google.maps.MapTypeId.ROADMAP,
        //mapTypeId: google.maps.MapTypeId.TERRAIN
-       noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
+       //noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
     };
     map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
     // Check if current user has authorized this application.
@@ -67,27 +70,29 @@ google.maps.event.addDomListener(window, 'load', function() {
                         for (var i = 0; i < folders.length; i++) {
                             var folder = folders[i];
                             console.log("name:" + folder.title);
-                            console.log("description:" + folder.description);
+                            //console.log("description:" + folder.description);
                             var latlng = folder.title.split(',');
+                            var pos = new google.maps.LatLng(latlng[0], latlng[1]);
                             //https://developers.google.com/maps/documentation/javascript/markers?hl=ja
                             var marker = new google.maps.Marker({
-                                position:  new google.maps.LatLng(latlng[0], latlng[1]),
-                                title:"Hello World!"
+                                position: pos,
+                                title: latlng[2]
+                            });
+                            //id[0]: GD共有フォルダID,　id[1]: googleアカウントID
+                            var ids = folder.description.split(',');
+                            // マーカークリック時のイベント
+                            google.maps.event.addListener(marker, 'click', function (ev) {
+                                map.setOptions({
+                                    zoom: 20 , 
+                                    center: ev.latLng
+                                });
+                                zoom(ids[0], ids[1]);
                             });
                             // To add the marker to the map, call setMap();
                             marker.setMap(map);
                         }
                     }
                 }); 
-                //サインインユーザー名テスト
-                //https://developers.google.com/api-client-library/javascript/samples/samples#authorizing-and-making-authorized-requests
-                gapi.client.people.people.get(
-                        {resourceName: 'people/me'}
-                ).then(function(resp) {
-                        console.log('Hello, ' + resp.result.names[0].givenName);
-                }, function(reason) {
-                        console.log('Error: ' + reason.result.error.message);
-                });
             });
         } else {
             console.log("Google authResult.error.");
@@ -95,10 +100,117 @@ google.maps.event.addDomListener(window, 'load', function() {
     });
 });
 
+var rPoly = new google.maps.Polyline({
+	strokeColor: '#0000FF',
+	strokeOpacity: 1.0,
+	strokeWeight: 3
+    });
+var lastInfoWin = new google.maps.InfoWindow();
+var infoWins = [];
+var markers = [];
+function zoom(fID, uID) {
+    //https://developers.google.com/drive/v2/reference/files/list
+    var request = gapi.client.drive.files.list({
+          q: "'" + fID + "' in parents and trashed = false"
+    });
+    //console.log(map);
+    request.execute(function (resp) {
+        console.log("Google drive track load folder.");
+        //appendPre('Files:');
+        var files = resp.items;
+        if (files && files.length > 0) {
+            var rPath = rPoly.getPath();
+            //つい忘れてしまう配列のソート方法 http://qiita.com/PianoScoreJP/items/f0ff7345229871039672
+            files.sort(function(a,b){
+                if( a.title < b.title ) return -1;
+                if( a.title > b.title ) return 1;
+                return 0;
+            });
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                console.log(file);
+                //console.log(file.description);
+                //console.log(file.webContentLink);
+                var jData = eval('(' + file.description + ')');
+                var pos = new google.maps.LatLng(jData.lat, jData.lng);
+                //console.log(pos.lat() + ', ' + pos.lng());
+                //maker
+                var rMarker = new google.maps.Marker({
+                    position: pos,
+                    icon: { path: 'M -2,2 0,-2 2,2 0,0 z', //arrowPath,
+                      scale: 3,
+                      strokeColor: '#00FF00',
+                      rotation: jData.rota 
+                      //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW; 矢印中心を移動したかっのでPath作った。
+                    }
+                });
+                rMarker.setMap(map);
+                //console.log(rMarker);
+                //path
+                rPath.push(pos);
+                //infowin
+                var date = new Date( jData.time );
+                var infoWinMsg = '<div class="infowindow' + jData.no + '">'
+                   + '<img src="'+ file.thumbnailLink + '" /><br />'
+                   + 'No.' + i + ' , '
+                   + date.toLocaleString() + '<br />'
+                   + '高度 : ' + Math.round(jData.alti) + 'm'
+                   + ', 方向 : ' + Math.round(jData.rota)
+                   + '°<br />pitch : ' + Math.round(jData.pitch)
+                   + '°, roll : ' + Math.round(jData.roll)
+                   + '°<br />GPS誤差 : ' + Math.round(jData.accuracy) +  'm<br />'
+                   ;
+                   if ( i !== 0 ) {
+                       infoWinMsg += ' [ <a onclick="openInfo(' + (i - 1) + ')" href="#">  Pre </a> ] ';
+                   }
+                   infoWinMsg += ' [ <a onclick="openInfo(' + (i + 1) + ')" href="#"> Next </a> ] ';
+                   infoWinMsg += ' [ <a href="' + file.webContentLink + '" target="_blank"> DownLoad </a> ] </div>';
+                   //関数で呼ばないとInfowindowが重なる
+                   infoWins.push(attachMessage(rMarker, infoWinMsg));
+                   markers.push(rMarker);
+                }
+                rPoly.setMap(map);
+            }
+    });
+}
+
+function openInfo(i) {
+    if( infoWins[i] ) {
+        lastInfoWin.close();
+        lastInfoWin = infoWins[i];
+        infoWins[i].open(markers[i].getMap(), markers[i]);
+    }
+}
+
+//ローバーアイコンのinfoWindow
+function attachMessage(marker, msg) {
+    //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
+    var infoWin = new google.maps.InfoWindow({
+	maxWidth:330, // infowindowの最大幅を設定
+	content: msg
+    });
+    // イベントを取得するListenerを追加
+    google.maps.event.addListener(marker, 'click', function(){
+	//次のウィンドウが表示されるまでウィンドウを表示
+	lastInfoWin.close();
+	lastInfoWin = infoWin;
+	//ウィンドウオープン
+        infoWin.open(marker.getMap(), marker);
+    });
+
+    //google.maps.event.addListener(marker, 'mouseout', function(){
+    google.maps.event.addListener(marker, 'closeclick', function(){
+          infoWin.close();
+    });
+    
+    return infoWin;
+  
+}
+
 </script>
 
 </head>
 <body>
-<div style="height:100%; background-color: #AAA" id="map-canvas"></div>
+<div style="height:100%; width:80%; background-color: #AAA" id="map-canvas"></div>
 </body>
 </html>
