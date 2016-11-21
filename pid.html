@@ -34,6 +34,7 @@ var lastCommand = "";
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
     //既存のPeer再接続（Android再起動の場合）
+    
     if (helloAndroid) {
         peer.destroy();
         helloAndroid = false;
@@ -211,6 +212,15 @@ function readJData(res) {
 </script>    
     </head>
     <body>
+        <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video>
+        JSON:<span id="JSON"></span>
+        <button id="authorizeButton" onclick="handleAuth()">Authorize GoogleID</button><br />
+        <!-- <select id="peers"><option>Serect Android-ID</option></select><br /> -->
+        <textarea id="messages" style="width:250px; height:150px;"></textarea><br />
+        Android:<span id="Astat"></span>
+        <textarea id="btMessages" style="width:200px; height:110px;"></textarea><br />
+        <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
+
         <div>TODO write content</div>
     </body>
 </html>
