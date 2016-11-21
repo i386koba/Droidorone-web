@@ -52,7 +52,7 @@ function handleAuth() {
         // - 自分のIDはpeerオブジェクトのidプロパティに存在する
         setMsgTextArea('My PeerID : ' + peer.id);
     });
-    //
+    //immediate: false
     gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES.join(" "), immediate: false}, handleAuthResult);
     return false;
 }
@@ -390,10 +390,6 @@ function initialize() {
         zIndex: 1// 重なりの優先値(z-index)
     });
 
-    //PeerIDセレクトで接続
-    $("#peers").change(function () {
-        peerStart($(this).val()); //Android のdataConn PeerID
-    });
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。

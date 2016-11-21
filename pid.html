@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>SmartPhone PID</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" href="http://www.cirlution.com/favicon.ico">
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+        <script type="text/javascript" src="https://skyway.io/dist/0.3/peer.js"></script>
+<script>
+    // SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
+const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
+//Drive REST API JavaScript Quickstart
+//https://developers.google.com/drive/v2/web/quickstart/js
+// Your Client ID can be retrieved from your project in the Google
+// Developer Console, https://console.developers.google.com
+const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
+//google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
+//OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
+var gapi;
+var peer;
+var peerdConn = null; // 接続したコネを保存しておく変数
+//2015.06
+var helloAndroid = false;
+var commandStr = "";
+var lastCommand = "";
+
+// Initiate auth flow in response to user clicking authorize button.
+function handleAuth() {
+    //既存のPeer再接続（Android再起動の場合）
+    if (helloAndroid) {
+        peer.destroy();
+        helloAndroid = false;
+    }
+    peer = new Peer({key: apiKey, debug: 3});
+    peer.on('error', function (err) {
+        setMsgTextArea('peer-err : ' + err);
+    });
+    peer.on('close', function () {
+        peer.destroy();
+        setMsgTextArea('peer Close: : ');
+        $("#authorizeButton").prop("disabled", false);
+    });
+    peer.on('open', function () {
+        // - 自分のIDはpeerオブジェクトのidプロパティに存在する
+        setMsgTextArea('My PeerID : ' + peer.id);
+    });
+    //immediate: false
+    gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES.join(" "), immediate: false}, handleAuthResult);
+    return false;
+}
+
+function handleAuthResult(authResult) {
+    var authButton = document.getElementById('authorizeButton');
+    if (authResult && !authResult.error) {
+        // Access token has been successfully retrieved, requests can be sent to the API.
+        gapi.client.load('drive', 'v2', loadPeerId);
+    } else {
+        // No access token could be retrieved, show the button to start the authorization flow.
+        authButton.onclick = function () {
+            gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(" "), 'immediate': false}, handleAuthResult);
+        };
+    }
+}
+//終了時
+$(window).on("beforeunload", function () {
+    peer.destroy();
+});
+
+var skyWayFolderID = "";
+function loadPeerId() {
+    //SkyWayフォルダ検索
+    var SKYWAYRC_DIR = "SkyWayRC";
+    var SKYWAY_ANDROID_ID = "SkyWayAndroid.id";
+    //Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
+    var skyWayIdfileID = "";
+    var requestFolder = gapi.client.drive.files.list({
+        q: "'root' in parents and mimeType = 'application/vnd.google-apps.folder'and trashed = false"
+    });
+    //Search for Folder
+    requestFolder.execute(function (resp) {
+        setMsgTextArea("Google drive load PeerId file.");
+        //appendPre('Files:');
+        var files = resp.items;
+        if (files && files.length > 0) {
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                if (file.title === SKYWAYRC_DIR) {
+                    skyWayFolderID = file.id;
+                    setMsgTextArea("Folder:" + file.title);
+                } //else { //setMsgTextArea(file.title ); }
+            }
+            var requestFile = gapi.client.drive.files.list({
+                q: "'" + skyWayFolderID + "' in parents and mimeType = 'text/plain'"
+            });
+            //Search for Files
+            requestFile.execute(function (resp) {
+                //appendPre('Files:');
+                var files = resp.items;
+                if (files && files.length > 0) {
+                    for (var i = 0; i < files.length; i++) {
+                        var file = files[i];
+                        if (file.title === SKYWAY_ANDROID_ID) {
+                            skyWayIdfileID = file.id;
+                            setMsgTextArea("File:" + file.title);
+                            //downloadFile(file, function (responseText){
+                            //setMsgTextArea("download peer.id:" + responseText);
+                            //});
+                        }
+                    }
+                    var requestIdGet = gapi.client.drive.files.get({'fileId': skyWayIdfileID});
+                    requestIdGet.execute(function (resp) {
+                        console.log('Title: ' + resp.title);
+                        console.log('Description: ' + resp.description);
+                        console.log('MIME type: ' + resp.mimeType);
+                        //peerStart(resp.description);
+                        setMsgTextArea("Android peer.id:" + resp.description);
+                        //Peer ID 接続
+                        peerStart(resp.description);
+                        //ボタンを無効にする
+                        $("#authorizeButton").prop("disabled", true);
+                    });
+
+                } else {
+                    setMsgTextArea("SkyWayAndroid.id not found:");
+                }
+            });
+        } else {
+            setMsgTextArea('SkyWayRC-folder not found:');
+        }
+    });
+}
+
+//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
+var video;
+function peerStart(destPeerId) {
+    //peer接続されていたら無効
+    if (helloAndroid) {
+        setMsgTextArea('Peer is already　Open.');
+        return;
+    }
+    // 相手への接続を開始する
+    peerdConn = peer.connect(destPeerId);
+    //, { serialization: 'none', metadata: {message: 'hi i want to chat with you!'} });
+    setMsgTextArea('Try connect: ' + destPeerId);
+
+    peerdConn.on('error', function (err) {
+        setMsgTextArea('conn-err: ' + err);
+    });
+
+    // 接続が完了した場合のイベントの設定
+    peerdConn.on("open", function () {
+        setMsgTextArea('Open　connect: ' + peerdConn.peer);
+        // メッセージ受信イベントの設定
+        peerdConn.on("data", function (res) {
+            //接続初回
+            if (helloAndroid === false) {
+                setMsgTextArea('From Android: ' + res);
+                helloAndroid = true;
+            } else {
+                readJData(res);
+            }
+        });
+    });
+    
+    peer.on('call', function (call) {
+        // - 相手のIDはCallオブジェクトのpeerプロパティに存在する
+        setMsgTextArea('Call from : ' + call.peer);
+        call.answer();
+        //呼び出しに応答する時のMediaStreamは必須ではありません。もし応答時にMediaStreamをセットしなければ、一方向の通話が確立されます。
+        setMsgTextArea('call Answer null');
+        call.on('stream', function (stream) {
+            // 映像ストリームオブジェクトをURLに変換する
+            // - video要素に表示できる形にするため変換している
+            var url = window.URL.createObjectURL(stream);
+            setMsgTextArea('stream url: ' + url);
+            // video要素のsrcに設定することで、映像を表示する 	 	
+            video.prop('src', url);
+            //GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
+            //if (gamepadNo !== -1) {
+            //setInterval(gamePadListen, 1000 / 30);
+            //}
+        });
+        call.on('error', function (err) {
+            setMsgTextArea('call-err : ' + err);
+        });
+    });
+}
+
+function readJData(res) {
+    $("#JSON").html(res);
+    //Androidデータ読み出し
+    jData = eval('(' + res + ')');
+    //Chromeデベロッパー・ツールの機能 http://www.buildinsider.net/web/chromedevtools/01#page-9
+    //jData.rota 0-180と0~-180 -> 0-360変更済み
+    //現在位置
+    $('#droidroneStat').html("No.: " + jData.no + ", GPS lat:" + jData.lat
+            + ", lag: " + jData.lng
+            + ", 高度: " + jData.alti + 'm'
+            + ', 誤差: ' + jData.accuracy + 'm'
+            + ', pitch: ' + jData.pitch + '°'
+            + ', roll: ' + jData.roll + '°');
+    
+}
+</script>    
+    </head>
+    <body>
+        <div>TODO write content</div>
+    </body>
+</html>

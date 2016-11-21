@@ -53,7 +53,7 @@ google.maps.event.addDomListener(window, 'load', function() {
        //noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
     };
     map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-    // Check if current user has authorized this application.
+    // Check if current user has authorized this application. immediate: false
     gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES, immediate: false}, function(authResult) {
         if (authResult && !authResult.error) {
             // Access token has been successfully retrieved, requests can be sent to the API.
