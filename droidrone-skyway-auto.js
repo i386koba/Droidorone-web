@@ -683,7 +683,7 @@ function readJData(res) {
     $("#orient").html(("00" + jData.rota).substr(-3) + ":" + oriBar.substr(Math.floor(jData.rota / 2), 90).substr(25, 45));
 
     //Android　バッテリ情報
-    $("#Astat").html(" Bat: " + jData.batLevel + "％, Temp: " + (jData.batTemp / 10).toFixed(1) + "℃");
+    $("#Astat").html(" Bat: " + jData.batLevel + "％, Temp: " + (jData.batTemp / 10).toFixed(1) + "℃, LTE Level: " + jData.lte);
 
     //メディアPeer接続後にBTコマンドが前回と違うとコマンド送信
     if (helloAndroid && commandStr !== lastCommand) {

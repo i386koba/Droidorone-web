@@ -11,6 +11,7 @@ and open the template in the editor.
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="shortcut icon" href="http://www.cirlution.com/favicon.ico">
         <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+        <script type="text/javascript" src="https://apis.google.com/js/client.js"></script>
         <script type="text/javascript" src="https://skyway.io/dist/0.3/peer.js"></script>
 <script>
     // SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
@@ -30,7 +31,7 @@ var peerdConn = null; // 接続したコネを保存しておく変数
 var helloAndroid = false;
 var commandStr = "";
 var lastCommand = "";
-
+var video;
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
     //既存のPeer再接続（Android再起動の場合）
@@ -126,6 +127,7 @@ function loadPeerId() {
                         peerStart(resp.description);
                         //ボタンを無効にする
                         $("#authorizeButton").prop("disabled", true);
+                        video = $('#android-video');
                     });
 
                 } else {
@@ -138,12 +140,10 @@ function loadPeerId() {
     });
 }
 
-//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
-var video;
 function peerStart(destPeerId) {
     //peer接続されていたら無効
     if (helloAndroid) {
-        setMsgTextArea('Peer is already　Open.');
+        setMsgTextArea('Peer is already Open.');
         return;
     }
     // 相手への接続を開始する
@@ -193,7 +193,10 @@ function peerStart(destPeerId) {
         });
     });
 }
-
+var commandStr = "";
+var lastCommand = "";
+// 倒立振子の制御変数。// 現在出力値とPID成分。
+var gPowerP, gPowerI, gPowerD; 
 function readJData(res) {
     $("#JSON").html(res);
     //Androidデータ読み出し
@@ -207,20 +210,76 @@ function readJData(res) {
             + ', 誤差: ' + jData.accuracy + 'm'
             + ', pitch: ' + jData.pitch + '°'
             + ', roll: ' + jData.roll + '°');
+        //Android　バッテリ情報
+    $("#Astat").html(" Bat: " + jData.batLevel + "％, Temp: " + (jData.batTemp / 10).toFixed(1) + "℃, LTE Level: " + jData.lte);
+    //PID 
+    //http://www.instructables.com/id/Another-Easier-Inverted-Pendulum-in-Japanese/step5/%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%81%AE%E6%9B%B8%E3%81%8D%E8%BE%BC%E3%81%BF/
+    // invertedRobot_v20d_noTimer.ino https://gist.github.com/i386koba/5bc955d2ff768a005139b231c914732f
+    // How to Build a Self-Balancing Autonomous Arduino Bot http://makezine.com/projects/arduroller-self-balancing-robot/
+    // 倒立振子を作ってみた。http://qiita.com/Qikoro/items/d24057b434c44fcdf74e
+   
+    // PID制御でモーター出力を計算。
+    gPowerP = jData.pitch / 90;    // P成分：傾き-90～90度 → -1～1
+    gPowerI += gPowerP;     // I成分：傾きの積算。
+    //Androidの加速度センサー(Accelerometer)から重力の影響を省いて値を取得する http://tomoima525.hatenablog.com/entry/2014/01/13/152559
+    //（degree per second、°/秒）http://ednjapan.com/edn/articles/1406/09/news014.html
+    gPowerD = jData.dpsY / 250;   // D成分：角速度-250～250dps → -1～1
     
+    // この数字は試行錯誤で調整。
+    var power = gPowerP * 17.0 + gPowerI *  1.5 + gPowerD *  2.0;
+    power = max(-1, min(1, power)); // → -1～1
+    // 方向転換させる場合はここでpowerL, Rに差分を与える。
+
+    // powerをモーター駆動PWMに変換。0～1 → V_MIN～V_MAX
+    var pwm = (int)((V_MAX - V_MIN) * abs(powerL) + V_MIN);
+    // モーター駆動。
+    commandStr = pwm + "1500m";
+ 
+    // 倒れたらモーター停止。
+    if (30 < abs(jData.pitch)) {
+        commandStr = "15001500m";
+    }
+
+    // デバッグ用。
+    Serial.print("dt:"); Serial.print(dt);
+    Serial.print("\tdegY:"); Serial.print(degY);
+    Serial.print("\tP:"); Serial.print(gPowerP);
+    Serial.print("\tI:"); Serial.print(gPowerI);
+    Serial.print("\tD:"); Serial.print(gPowerD);
+    Serial.print("\tpwr:"); Serial.print(power);
+    Serial.println("");
+  
+    //メディアPeer接続後にBTコマンドが前回と違うとコマンド送信
+    if (helloAndroid && commandStr !== lastCommand) {
+        lastCommand = commandStr;
+        $("#commandStat").val('PeerSend[' + commandStr + ']');
+        //console.log(commandStr);
+        // Peer送信
+        if (peerdConn) {
+            peerdConn.send("BTC:" + commandStr);
+        }
+    }
+}
+function setMsgTextArea(str) {
+    $("#messages").val(str + "\n" + $("#messages").val());
+    $("#messages").scrollTop();
+}
+
+function setBtTextArea(str) {
+    $("#btMessages").val(str + "\n" + $("#btMessages").val());
+    $("#btMessages").scrollTop();
 }
 </script>    
     </head>
     <body>
-        <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video>
-        JSON:<span id="JSON"></span>
         <button id="authorizeButton" onclick="handleAuth()">Authorize GoogleID</button><br />
+        <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video>
         <!-- <select id="peers"><option>Serect Android-ID</option></select><br /> -->
-        <textarea id="messages" style="width:250px; height:150px;"></textarea><br />
-        Android:<span id="Astat"></span>
-        <textarea id="btMessages" style="width:200px; height:110px;"></textarea><br />
+        <textarea id="messages" style="width:250px; height:320px;"></textarea>
+         <textarea id="btMessages" style="width:200px; height:320px;"></textarea><br />
         <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
-
-        <div>TODO write content</div>
+        <div id="droidroneStat">droidroneStat</div>
+        Android:<span id="Astat"></span><br />
+        JSON:<span id="JSON"></span>            
     </body>
 </html>
