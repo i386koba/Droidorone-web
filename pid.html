@@ -197,6 +197,8 @@ var commandStr = "";
 var lastCommand = "";
 // 倒立振子の制御変数。// 現在出力値とPID成分。
 var gPowerP, gPowerI, gPowerD; 
+var pwmMax = 2100;
+var pwmMin = 900;
 function readJData(res) {
     $("#JSON").html(res);
     //Androidデータ読み出し
@@ -225,29 +227,27 @@ function readJData(res) {
     //（degree per second、°/秒）http://ednjapan.com/edn/articles/1406/09/news014.html
     gPowerD = jData.dpsY / 250;   // D成分：角速度-250～250dps → -1～1
     
-    // この数字は試行錯誤で調整。
-    var power = gPowerP * 17.0 + gPowerI *  1.5 + gPowerD *  2.0;
+    // この数字は試行錯誤で調整。gPowerP * 17.0 + gPowerI *  1.5 + gPowerD *  2.0;
+    var power = gPowerP * $("#kP").val() + gPowerI *  $("#kI").val() + gPowerD * $("#kD").val();
     power = max(-1, min(1, power)); // → -1～1
     // 方向転換させる場合はここでpowerL, Rに差分を与える。
-
+    
     // powerをモーター駆動PWMに変換。0～1 → V_MIN～V_MAX
-    var pwm = (int)((V_MAX - V_MIN) * abs(powerL) + V_MIN);
+    var pwm = (int)((pwmMax - pwmMin) * abs(power) + pwmMin);
     // モーター駆動。
     commandStr = pwm + "1500m";
  
     // 倒れたらモーター停止。
-    if (30 < abs(jData.pitch)) {
+    if ( 30 < abs(jData.pitch) ) {
         commandStr = "15001500m";
     }
 
     // デバッグ用。
-    Serial.print("dt:"); Serial.print(dt);
-    Serial.print("\tdegY:"); Serial.print(degY);
-    Serial.print("\tP:"); Serial.print(gPowerP);
-    Serial.print("\tI:"); Serial.print(gPowerI);
-    Serial.print("\tD:"); Serial.print(gPowerD);
-    Serial.print("\tpwr:"); Serial.print(power);
-    Serial.println("");
+    $('#pidStat').html(
+        "dt:" + dt
+        + "degY:" + degY + ", P:" + gPowerP
+        + "I:" + gPowerI + "D:" + gPowerD
+        + "power:" + power);
   
     //メディアPeer接続後にBTコマンドが前回と違うとコマンド送信
     if (helloAndroid && commandStr !== lastCommand) {
@@ -276,8 +276,13 @@ function setBtTextArea(str) {
         <video id="android-video" style="height: 320px; width: 320px; background-color: #AAA" autoplay></video>
         <!-- <select id="peers"><option>Serect Android-ID</option></select><br /> -->
         <textarea id="messages" style="width:250px; height:320px;"></textarea>
-         <textarea id="btMessages" style="width:200px; height:320px;"></textarea><br />
+        <textarea id="btMessages" style="width:200px; height:320px;"></textarea><br />
         <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
+        <!--gPowerP * 17.0 + gPowerI *  1.5 + gPowerD *  2.0;-->
+        Kp：Proportinal（比例）= <input type="number" id="kP" min="0" max="50" value="17.0" step="0.1" style="width:50px" /> ,
+　　    Ki：Integral（積分） = <input type="number" id="kI" min="0" max="5" value="1.5"  step="0.1" style="width:50px" /> ,
+        Kd：Differential（微分）<input type="number" id="kD" min="0" max="5" value="2.0"  step="0.1" style="width:50px" />
+        <div id="pidStat">PID Stat</div>
         <div id="droidroneStat">droidroneStat</div>
         Android:<span id="Astat"></span><br />
         JSON:<span id="JSON"></span>            
