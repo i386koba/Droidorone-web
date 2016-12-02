@@ -276,7 +276,7 @@ function readJData(res) {
     if (pidStat === true) {
         commandStr ="pid," + $("#pwmCenter").val() + "," + $("#kP").val() + "," + $("#kI").val() + "," + $("#kD").val();
     } else {
-        commandStr = $("#pwmCenter").val() + "1500m";
+        commandStr = "BTC:" + $("#pwmCenter").val() + "1500m";
     }
     // デバッグ用。
     $('#pidStat').html( "pid:" + jData.pid);
