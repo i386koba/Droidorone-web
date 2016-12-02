@@ -483,32 +483,31 @@ function initialize() {
     //Xカメラ操作
     $("#xCamera").on('input', function () {
         //JavaScriptでゼロ埋めする方法 http://stabucky.com/wp/archives/4655
-        commandStr = ("0" + $("#xCamera").val()).slice(-4) + "x";
+        commandStr = "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
 
     //Center Click
     $("#xCset").click(function () {
         $("#xCamera").val($("#xCCenter").val());
-        commandStr = ("0" + $("#xCamera").val()).slice(-4) + "x";
+        commandStr =  "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
 
     //xCamera　中心　xCCenter
     $("#xCamera").val($("#xCCenter").val());
     $("#xCCenter").on('input', function () {
         $("#xCamera").val($("#xCCenter").val());
-        commandStr = ("0" + $("#xCamera").val()).slice(-4) + "x";
+        commandStr =  "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
 
     //Yカメラ操作
     $("#yCamera").on('input', function () {
-        yCamera = ("0" + $("#yCamera").val()).slice(-4);
-        commandStr = ("0" + $("#yCamera").val()).slice(-4) + "y";
+        commandStr = "BTC:" +  ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
 
     //Center Click
     $("#yCSet").click(function () {
         $("#yCamera").val($("#yCCenter").val());
-        commandStr = ("0" + $("#yCamera").val()).slice(-4) + "y";
+        commandStr = "BTC:" + ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
 
     //CameraY↑範囲"yCMaxRange"
@@ -527,7 +526,7 @@ function initialize() {
     $("#yCamera").val($("#yCCenter").val());
     $("#yCCenter").on('input', function () {
         $("#yCamera").val($("#yCCenter").val());
-        commandStr = ("0" + $("#yCamera").val()).slice(-4) + "y";
+        commandStr = "BTC:" + ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
 
     //BT connect Click
@@ -608,7 +607,7 @@ function  padDraw() {
     //Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
     var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
     var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
-    commandStr = xPWM + "" + yPWM + "m";
+    commandStr = "BTC:" + xPWM + "" + yPWM + "m";
 }
 
 var map;
@@ -692,7 +691,7 @@ function readJData(res) {
         //console.log(commandStr);
         // Peer送信
         if (peerdConn) {
-            peerdConn.send("BTC:" + commandStr);
+            peerdConn.send(commandStr);
         }
     }
     //初回GPS受信できない場合　サーリューション35.8401073,137.9581047
@@ -872,7 +871,7 @@ function readJData(res) {
                     setBtTextArea("設定までd:" + distance.toFixed(2) + "m,　h:" + heading.toFixed(0) + "°.");
                     //設定場所到着
                     if (distance < setDis) {
-                        commandStr = "15001500m"; //停止
+                        commandStr = "BTC:15001500m"; //停止
                         if ($('#selfOn').prop('checked') && !reachInfoWinClose) {
                             reachInfoWin.open(map, farstSetMaker);
                         } else {
@@ -895,25 +894,25 @@ function readJData(res) {
                         if (direction > 0) {
                             //ローバーの右が目的地
                             if (direction > 90) { //急角度
-                                commandStr = "1700" + speed + "m";
+                                commandStr = "BTC:" + "1700" + speed + "m";
                                 $("#commandStat").val(jData.rota + '自動操縦 右 急旋回' + direction.toFixed(0));
                             } else if (direction < 10) {
-                                commandStr = "1500" + speed + "m";
+                                commandStr = "BTC:" + "1500" + speed + "m";
                                 $("#commandStat").val(jData.rota + '自動操縦　直進' + direction.toFixed(0));
                             } else { // 右　なだらか
-                                commandStr = "1600" + speed + "m";
+                                commandStr = "BTC:" + "1600" + speed + "m";
                                 $("#commandStat").val(jData.rota + '自動操縦 右 旋回' + direction.toFixed(0));
                             }
                         } else {
                             //ローバーの左が目的地
                             if (direction < -90) {
-                                commandStr = "1300" + speed + "m";
+                                commandStr = "BTC:" + "1300" + speed + "m";
                                 $("#commandStat").val(jData.rota + '自動操縦 左 急旋回' + direction.toFixed(0));
                             } else if (direction > -10) {
-                                commandStr = "1500" + speed + "m";
+                                commandStr = "BTC:" + "1500" + speed + "m";
                                 $("#commandStat").val(jData.rota + '自動操縦　直進' + direction.toFixed(0));
                             } else {
-                                commandStr = "1400" + speed + "m";
+                                commandStr = "BTC:" + "1400" + speed + "m";
                                 $("#commandStat").val(jData.rota + '自動操縦 左　旋回' + direction.toFixed(0));
                             }
                         }
