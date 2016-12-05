@@ -274,7 +274,7 @@ function readJData(res) {
         }
     }
     if (pidStat === true) {
-        commandStr ="pid," + $("#pwmCenter").val() + "," + $("#kP").val() + "," + $("#kI").val() + "," + $("#kD").val();
+        commandStr ="pid," + $("#pwmCenter").val() + "," + $("#kP").val() + "," + $("#kI").val() + "," + $("#kD").val();$('#autoOff').prop('checked')
     } else {
         commandStr = "BTC:" + $("#pwmCenter").val() + "1500m";
     }
@@ -305,7 +305,9 @@ function setBtTextArea(str) {
         PWM Center<input type="number" id="pwmCenter" min="1400" max="1600" value="1500" step="10" style="width:50px" />
         Kp：Proportinal（比例）= <input type="number" id="kP" min="0" max="50" value="17.0" step="0.1" style="width:50px" /> ,
   　    Ki：Integral（積分） = <input type="number" id="kI" min="0" max="5" value="1.5"  step="0.1" style="width:50px" /> ,
-        Kd：Differential（微分）<input type="number" id="kD" min="0" max="5" value="2.0"  step="0.1" style="width:50px" />
+        Kd：Differential（微分）<input type="number" id="kD" min="0" max="5" value="2.0"  step="0.1" style="width:50px" /><br />
+        (正転<input id="kPos" name="RadioGroup3" type="radio"  checked="checked" />)
+        (逆転<input id="kNeg" name="RadioGroup3" type="radio" />)
         <div id="pidStat">PID Stat</div>
         <div id="droidroneStat">droidroneStat</div>
         Android:<span id="Astat"></span><br />
