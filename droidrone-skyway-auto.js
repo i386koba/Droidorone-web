@@ -690,8 +690,12 @@ function readJData(res) {
         $("#commandStat").val('PeerSend[' + commandStr + ']');
         //console.log(commandStr);
         // Peer送信
-        if (peerdConn) {
+        if (peerdConn && commandStr !== "") {
             peerdConn.send(commandStr);
+            //CameraSwitch 連続押し対応
+            if (commandStr === "switchCamera") {
+                commandStr ="";
+            }
         }
     }
     //初回GPS受信できない場合　サーリューション35.8401073,137.9581047
