@@ -274,12 +274,20 @@ function readJData(res) {
         }
     }
     if (pidStat === true) {
-        commandStr ="pid," + $("#pwmCenter").val() + "," + $("#kP").val() + "," + $("#kI").val() + "," + $("#kD").val();$('#autoOff').prop('checked')
+        commandStr ="pid," + $("#pwmCenter").val() + "," + $("#kP").val() + "," + $("#kI").val() + "," + $("#kD").val() + "," + $("#pwmW").val();
+        if ( $('#kPos').prop('checked') ){
+            commandStr += ",1";
+        }
+        if ( $('#kNeg').prop('checked') ){
+            commandStr += ",-1";
+        }
+        setBtTextArea(jData.pwm);
     } else {
         commandStr = "BTC:" + $("#pwmCenter").val() + "1500m";
     }
     // デバッグ用。
     $('#pidStat').html( "pid:" + jData.pid);
+    $('#btStat').html( "BT:" + jData.btr);
 }
 function setMsgTextArea(str) {
     $("#messages").val(str + "\n" + $("#messages").val());
@@ -298,7 +306,8 @@ function setBtTextArea(str) {
         <!-- <select id="peers"><option>Serect Android-ID</option></select><br /> -->
         <textarea id="messages" style="width:250px; height:320px;"></textarea>
         <textarea id="btMessages" style="width:200px; height:320px;"></textarea><br />
-        <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
+        <textarea id="commandStat" style="width:200px; height:40px;"></textarea>
+        <textarea id="btStat" style="width:200px; height:40px;"></textarea><br />
         <!--gPowerP * 17.0 + gPowerI *  1.5 + gPowerD *  2.0;-->
         <button id="PIDstart" onclick="pidStart()">PID start</button>
         <button id="PIDstop" onclick="pidStop()" disabled>PID Stop</button><br />
@@ -306,6 +315,7 @@ function setBtTextArea(str) {
         Kp：Proportinal（比例）= <input type="number" id="kP" min="0" max="50" value="17.0" step="0.1" style="width:50px" /> ,
   　    Ki：Integral（積分） = <input type="number" id="kI" min="0" max="5" value="1.5"  step="0.1" style="width:50px" /> ,
         Kd：Differential（微分）<input type="number" id="kD" min="0" max="5" value="2.0"  step="0.1" style="width:50px" /><br />
+        PWM：Width（駆動速度）= <input type="number" id="pwmW" min="0" max="500" value="300" step="10" style="width:50px" /> ,
         (正転<input id="kPos" name="RadioGroup3" type="radio"  checked="checked" />)
         (逆転<input id="kNeg" name="RadioGroup3" type="radio" />)
         <div id="pidStat">PID Stat</div>
