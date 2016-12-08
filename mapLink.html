@@ -24,9 +24,7 @@ From  https://github.com/nttcom/SkyWay-JS-Sample/tree/master/p2p_broadcast
 	padding: 0;
     }
   </style>
-  <!--
   <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
-  -->
   <script type="text/javascript" src="https://apis.google.com/js/client.js"></script>
   <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCYgefNHuojh9xFK6EAWPDjQc8-x1bg4o0&amp;libraries=geometry"></script>
 
@@ -48,7 +46,7 @@ google.maps.event.addDomListener(window, 'load', function() {
     var mapOptions = {
        zoom: 2,
        center: new google.maps.LatLng(35, 138), 
-       mapTypeId: google.maps.MapTypeId.ROADMAP,
+       mapTypeId: google.maps.MapTypeId.ROADMAP
        //mapTypeId: google.maps.MapTypeId.TERRAIN
        //noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
     };
@@ -107,8 +105,20 @@ var rPoly = new google.maps.Polyline({
     });
 var lastInfoWin = new google.maps.InfoWindow();
 var infoWins = [];
-var markers = [];
+var rMarkers = [];
 function zoom(fID, uID) {
+    //マーカー、パスのクリア
+    for ( var i = 0; i < rMarkers.length; i++ ) { 
+        rMarkers[i].setMap(null);
+        console.log("rMarkers Clear:" + i);
+    }
+    rMarkers = [];
+    infoWins = [];
+    if (rPoly.getMap() !== null) {
+        console.log("rPoly Clear.");
+        rPoly.getPath();
+        rPoly.setMap(null);
+    }
     //https://developers.google.com/drive/v2/reference/files/list
     var request = gapi.client.drive.files.list({
           q: "'" + fID + "' in parents and trashed = false"
@@ -128,7 +138,8 @@ function zoom(fID, uID) {
             });
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
-                console.log(file);
+                console.log(file.thumbnailLink);
+                //$("#info").val(file + "");
                 //console.log(file.description);
                 //console.log(file.webContentLink);
                 var jData = eval('(' + file.description + ')');
@@ -145,13 +156,15 @@ function zoom(fID, uID) {
                     }
                 });
                 rMarker.setMap(map);
+                //rMarkerArray.push(rMarker);
                 //console.log(rMarker);
                 //path
                 rPath.push(pos);
                 //infowin
                 var date = new Date( jData.time );
                 var infoWinMsg = '<div class="infowindow' + jData.no + '">'
-                   + '<img src="'+ file.thumbnailLink + '" /><br />'
+        //403 エラー　https://ja.wikipedia.org/wiki/HTTP_403           
+        //+ '<img src="'+ file.thumbnailLink + '" /><br />'
                    + 'No.' + i + ' , '
                    + date.toLocaleString() + '<br />'
                    + '高度 : ' + Math.round(jData.alti) + 'm'
@@ -167,10 +180,10 @@ function zoom(fID, uID) {
                    infoWinMsg += ' [ <a href="' + file.webContentLink + '" target="_blank"> DownLoad </a> ] </div>';
                    //関数で呼ばないとInfowindowが重なる
                    infoWins.push(attachMessage(rMarker, infoWinMsg));
-                   markers.push(rMarker);
-                }
-                rPoly.setMap(map);
+                   rMarkers.push(rMarker);
             }
+            rPoly.setMap(map);
+        }
     });
 }
 
@@ -178,7 +191,7 @@ function openInfo(i) {
     if( infoWins[i] ) {
         lastInfoWin.close();
         lastInfoWin = infoWins[i];
-        infoWins[i].open(markers[i].getMap(), markers[i]);
+        infoWins[i].open(rMarkers[i].getMap(), rMarkers[i]);
     }
 }
 
@@ -206,11 +219,14 @@ function attachMessage(marker, msg) {
     return infoWin;
   
 }
-
+//
+//https://developers.google.com/maps/documentation/javascript/customoverlays?hl=ja
 </script>
 
 </head>
 <body>
-<div style="height:100%; width:80%; background-color: #AAA" id="map-canvas"></div>
+<div style="height:100%; width:98%; background-color: #AAA; position: relative; z-index: 0;" id="map-canvas">
+<div style="position: absolute; top: 50px; left: 50px; z-index: -1;" id="info">test</div>
+</div>
 </body>
 </html>
