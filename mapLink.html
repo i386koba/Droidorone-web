@@ -107,17 +107,18 @@ var lastInfoWin = new google.maps.InfoWindow();
 var infoWins = [];
 var rMarkers = [];
 function zoom(fID, uID) {
-    //マーカー、パスのクリア
-    for ( var i = 0; i < rMarkers.length; i++ ) { 
-        rMarkers[i].setMap(null);
-        console.log("rMarkers Clear:" + i);
-    }
-    rMarkers = [];
-    infoWins = [];
+ 
     if (rPoly.getMap() !== null) {
         console.log("rPoly Clear.");
-        rPoly.getPath();
+        //rPoly.getPath();
         rPoly.setMap(null);
+        //マーカー、パスのクリア
+        for ( var i = 0; i < rMarkers.length; i++ ) { 
+            rMarkers[i].setMap(null);
+            console.log("rMarkers Clear:" + i);
+        }
+        rMarkers = [];
+        infoWins = [];
     }
     //https://developers.google.com/drive/v2/reference/files/list
     var request = gapi.client.drive.files.list({
@@ -138,8 +139,8 @@ function zoom(fID, uID) {
             });
             for (var i = 0; i < files.length; i++) {
                 var file = files[i];
-                console.log(file.thumbnailLink);
-                //$("#info").val(file + "");
+                //console.log(file.thumbnailLink);
+                //$("#info-text").val(file.description);
                 //console.log(file.description);
                 //console.log(file.webContentLink);
                 var jData = eval('(' + file.description + ')');
@@ -156,31 +157,29 @@ function zoom(fID, uID) {
                     }
                 });
                 rMarker.setMap(map);
-                //rMarkerArray.push(rMarker);
                 //console.log(rMarker);
-                //path
                 rPath.push(pos);
                 //infowin
                 var date = new Date( jData.time );
                 var infoWinMsg = '<div class="infowindow' + jData.no + '">'
-        //403 エラー　https://ja.wikipedia.org/wiki/HTTP_403           
-        //+ '<img src="'+ file.thumbnailLink + '" /><br />'
+                //403 エラー　https://ja.wikipedia.org/wiki/HTTP_403           
+                // + '<img src="'+ file.thumbnailLink + '" /><br />'
                    + 'No.' + i + ' , '
                    + date.toLocaleString() + '<br />'
                    + '高度 : ' + Math.round(jData.alti) + 'm'
                    + ', 方向 : ' + Math.round(jData.rota)
                    + '°<br />pitch : ' + Math.round(jData.pitch)
                    + '°, roll : ' + Math.round(jData.roll)
-                   + '°<br />GPS誤差 : ' + Math.round(jData.accuracy) +  'm<br />'
-                   ;
-                   if ( i !== 0 ) {
-                       infoWinMsg += ' [ <a onclick="openInfo(' + (i - 1) + ')" href="#">  Pre </a> ] ';
-                   }
-                   infoWinMsg += ' [ <a onclick="openInfo(' + (i + 1) + ')" href="#"> Next </a> ] ';
-                   infoWinMsg += ' [ <a href="' + file.webContentLink + '" target="_blank"> DownLoad </a> ] </div>';
-                   //関数で呼ばないとInfowindowが重なる
-                   infoWins.push(attachMessage(rMarker, infoWinMsg));
-                   rMarkers.push(rMarker);
+                   + '°<br />GPS誤差 : ' + Math.round(jData.accuracy) +  'm<br />';
+                if ( i !== 0 ) {
+                    infoWinMsg += ' [ <a onclick="openInfo(' + (i - 1) + ')" href="#">  Pre </a> ] ';
+                }
+                infoWinMsg += ' [ <a onclick="openInfo(' + (i + 1) + ')" href="#"> Next </a> ] ';
+                infoWinMsg += ' [ <a href="' + file.webContentLink + '" target="_blank"> DownLoad </a> ] </div>';
+                //関数で呼ばないとInfowindowが重なる
+                infoWins.push(attachMessage(rMarker, infoWinMsg));
+                rMarkers.push(rMarker);
+                console.log("rMarkers :" + rMarkers.length);
             }
             rPoly.setMap(map);
         }
@@ -219,14 +218,14 @@ function attachMessage(marker, msg) {
     return infoWin;
   
 }
-//
+//Google Maps JavaScript API の OverlayView クラスを使うと、独自のカスタム オーバーレイを作成できます。
 //https://developers.google.com/maps/documentation/javascript/customoverlays?hl=ja
 </script>
 
 </head>
 <body>
-<div style="height:100%; width:98%; background-color: #AAA; position: relative; z-index: 0;" id="map-canvas">
-<div style="position: absolute; top: 50px; left: 50px; z-index: -1;" id="info">test</div>
-</div>
+    
+<div style="position: absolute; top: 50px; left: 50px; z-index: 5;" id="info-text">test</div>
+<div style="height:100%; width:98%; background-color: #AAA;" id="map-canvas"></div>
 </body>
 </html>
