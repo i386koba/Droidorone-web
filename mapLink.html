@@ -39,7 +39,7 @@ const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\M
 var gapi;
 var google;
 var map;
-
+var makers = [];
 //DOM読み込み完了　初期化
 google.maps.event.addDomListener(window, 'load', function() {
     //日本中心に地図
@@ -74,17 +74,24 @@ google.maps.event.addDomListener(window, 'load', function() {
                             //https://developers.google.com/maps/documentation/javascript/markers?hl=ja
                             var marker = new google.maps.Marker({
                                 position: pos,
-                                title: latlng[2]
+                                title: latlng[2],
+                                label: i + ""
                             });
                             //id[0]: GD共有フォルダID,　id[1]: googleアカウントID
                             var ids = folder.description.split(',');
+                            console.log(folder.description);
+                            makers[i] = ids[0];
                             // マーカークリック時のイベント
+                            //addListenerでの関数の引数渡
+                            //http://d.hatena.ne.jp/mrgoofy33/20090607/1244304360
                             google.maps.event.addListener(marker, 'click', function (ev) {
                                 map.setOptions({
                                     zoom: 20 , 
                                     center: ev.latLng
                                 });
-                                zoom(ids[0], ids[1]);
+                                //zoom(ids[0], ids[1]); ここで引数指定しても、最初のマーカーしかとばない。
+                                //グローバル変数で指定
+                                zoom(makers.length);
                             });
                             // To add the marker to the map, call setMap();
                             marker.setMap(map);
@@ -106,20 +113,25 @@ var rPoly = new google.maps.Polyline({
 var lastInfoWin = new google.maps.InfoWindow();
 var infoWins = [];
 var rMarkers = [];
-function zoom(fID, uID) {
- 
+function zoom(label) {
+    console.log("zoom:" + label);
+    //マーカー、パスのクリア
     if (rPoly.getMap() !== null) {
-        console.log("rPoly Clear.");
-        //rPoly.getPath();
+        //console.log("rPath Clear:");
+        var path = rPoly.getPath();
         rPoly.setMap(null);
-        //マーカー、パスのクリア
+        path.clear();
+      
         for ( var i = 0; i < rMarkers.length; i++ ) { 
+            //console.log(rMarkers[i]);
             rMarkers[i].setMap(null);
-            console.log("rMarkers Clear:" + i);
+            //console.log("rMarkers Clear:" + i);
         }
         rMarkers = [];
         infoWins = [];
     }
+    var fID = makers[label];
+    console.log("zoom:fID:" + fID);
     //https://developers.google.com/drive/v2/reference/files/list
     var request = gapi.client.drive.files.list({
           q: "'" + fID + "' in parents and trashed = false"
@@ -179,7 +191,7 @@ function zoom(fID, uID) {
                 //関数で呼ばないとInfowindowが重なる
                 infoWins.push(attachMessage(rMarker, infoWinMsg));
                 rMarkers.push(rMarker);
-                console.log("rMarkers :" + rMarkers.length);
+                console.log(rMarker);
             }
             rPoly.setMap(map);
         }
