@@ -389,7 +389,7 @@ function initialize() {
         editable: true,
         zIndex: 1// 重なりの優先値(z-index)
     });
-
+    readJData('{"no":0,"lat":35.8401073,"lng":137.9581047,"alti":700,"btr":"BAT:0.0"}');
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。

@@ -70,9 +70,6 @@ google.maps.event.addDomListener(window, 'load', function() {
                     if (folders && folders.length > 0) {
                         for (var i = 0; i < folders.length; i++) {
                             var folder = folders[i];
-                            //console.log("name:" + folder.title);
-                            info += (folder.title + "</br>\n");
-                            //console.log("description:" + folder.description);
                             var latlng = folder.title.split(',');
                             var pos = new google.maps.LatLng(latlng[0], latlng[1]);
                             //https://developers.google.com/maps/documentation/javascript/markers?hl=ja
@@ -86,6 +83,9 @@ google.maps.event.addDomListener(window, 'load', function() {
                             onMarkerClickZoom(marker, ids[0]);
                             // To add the marker to the map, call setMap();
                             marker.setMap(map);
+                            //console.log("name:" + folder.title);
+                            info += ('No.'　+　i + ': <a herf="#" style="color: blue" onclick="zoom(' + latlng[0] + ',' + latlng[1] + ')" >'
+                            + latlng[2] + '</a></br>\n');
                         }
                         document.getElementById('info').innerHTML = info;
                     }
@@ -97,6 +97,12 @@ google.maps.event.addDomListener(window, 'load', function() {
     });
 });
 
+function zoom(lat, lng) { 
+    map.setOptions({
+        zoom: 18 , 
+        center: new google.maps.LatLng(lat, lng)
+    });
+}
 var rPoly = new google.maps.Polyline({
 	strokeColor: '#0000FF',
 	strokeOpacity: 1.0,
@@ -191,7 +197,7 @@ function onMarkerClickZoom(marker, fID) {
                     //関数で呼ばないとInfowindowが重なる
                     infoWins.push(attachMessage(rMarker, infoWinMsg));
                     rMarkers.push(rMarker);
-                    console.log(rMarker);
+                    //console.log(rMarker);
                 }
                 rPoly.setMap(map);
             }

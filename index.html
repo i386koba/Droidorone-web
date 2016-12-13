@@ -16,7 +16,7 @@
 	<script type="text/javascript" src="droidrone-skyway-auto.js"></script>
     </head>
     <body>
-        <table> <!--style="position: absolute; top: 0px; left: 650px">-->
+        <table style="position: absolute; top: 50px; left: 50px; z-index: 5;">
             <tr>
                 <td style="vertical-align: top; text-align: right; width: 50px;"> <!-- text-align:center;">  -->
 		    <!-- input要素に type="range" を指定すると、大まかな数値の入力欄を作成できます。 http://www.tagindex.com/html5/form/input_range.html-->  
@@ -43,8 +43,7 @@
                     <button id="xCset">Center</button>
                 </td>
                 <td colspan="2">
-                    <div style="width:500px; height:340px; background-color: #AAA" id="map-canvas"></div><br />
-                    Map表示:
+                     Map表示:
                     (<label for="MapPanOff">現在地</label>
                     <input id="MapPanOff" name="RadioGroup2" type="radio"  checked="checked" />)
                     (<label for="MapPanOn">パン</label>
@@ -60,6 +59,7 @@
             </tr>
             <tr>
                 <td colspan="4">
+                    
                     <div id="droidroneStat">受信待ち.ページがズームしているとMapが正常に表示されないことがあります</div>
                 </td>
             </tr>
@@ -95,11 +95,13 @@
                     <button id="mapClear">Mapクリア</button> <button id="btConn">BT接続</button><br />
                     <textarea id="btMessages" style="width:200px; height:110px;"></textarea><br />
                     <textarea id="commandStat" style="width:200px; height:40px;"></textarea><br />
+                    <a href="mapLink.html" target="_blank">軌跡一覧表示ページ</a>
                 </td>
 	    </tr>
         </table>
-        <a href="mapLink.html" target="_blank">軌跡一覧表示ページ</a>
-	<br />
+        
+        <div style="height:800px; width:1200px; background-color: #AAA" id="map-canvas"></div>
+        <br />
 	JSON:<span id="JSON"></span>
         <p><button id="snapshot-btn">snapshot</button></p>
         <p>snap-area:</p>
