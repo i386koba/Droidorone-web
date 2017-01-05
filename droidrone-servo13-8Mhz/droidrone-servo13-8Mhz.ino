@@ -22,15 +22,17 @@
   http://i.stack.imgur.com/oOtkU.png
   PWM　３，５，６，９，１０，１１Pin
 */
+#include <SoftwareSerial.h>
+SoftwareSerial rn4020(2, 3);
 
 #include <Servo.h>
-Servo sv2;
-Servo sv3;
-Servo sv4;
-Servo sv5;
-Servo sv6;
-Servo sv7;
-Servo sv8;
+//Servo sv2;
+//Servo sv3;
+//Servo sv4;
+//Servo sv5;
+//Servo sv6;
+//Servo sv7;
+//Servo sv8;
 Servo sv11;
 Servo sv12;
 //Servo sv13;
@@ -46,7 +48,7 @@ boolean servoAttached = false;
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(9600);//115200bps CPU8Mhzでは取りこぼし起きる。
   pinMode(13, OUTPUT); //LED表示
   //ホールセンサーＵＳ１８８１ＬＵＡ http://akizukidenshi.com/catalog/g/gI-05274/
   //オープンドレイン出力
@@ -70,13 +72,13 @@ void loop()
 
   //Bt通信監視
   if (servoAttached && lastTime > millis() + 1100) {
-    sv2.writeMicroseconds(1500);
-    sv3.writeMicroseconds(1500);
-    sv4.writeMicroseconds(1500);
-    sv5.writeMicroseconds(1500);
-    sv6.writeMicroseconds(1500);
-    sv7.writeMicroseconds(1500);
-    sv8.writeMicroseconds(1500);
+//    sv2.writeMicroseconds(1500);
+//    sv3.writeMicroseconds(1500);
+//    sv4.writeMicroseconds(1500);
+//    sv5.writeMicroseconds(1500);
+//    sv6.writeMicroseconds(1500);
+//    sv7.writeMicroseconds(1500);
+//    sv8.writeMicroseconds(1500);
     sv11.writeMicroseconds(1500);
     sv12.writeMicroseconds(1500);
     //sv13.writeMicroseconds(1500);
@@ -89,13 +91,13 @@ void loop()
     int d = Serial.read();
 
     if ( d == 'a' ) {
-      sv2.attach(2, 800, 2200);
-      sv3.attach(3, 800, 2200);
-      sv4.attach(4, 800, 2200);
-      sv5.attach(5, 800, 2200);
-      sv6.attach(6, 800, 2200);
-      sv7.attach(7, 800, 2200);
-      sv8.attach(8, 800, 2200);
+//      sv2.attach(2, 800, 2200);
+//      sv3.attach(3, 800, 2200);
+//      sv4.attach(4, 800, 2200);
+//      sv5.attach(5, 800, 2200);
+//      sv6.attach(6, 800, 2200);
+//      sv7.attach(7, 800, 2200);
+//      sv8.attach(8, 800, 2200);
       sv11.attach(11, 800, 2200);
       sv12.attach(12, 800, 2200);
       //sv13.attach(13, 800, 2200);
@@ -104,13 +106,13 @@ void loop()
       hallCount = 0;
     }
     else if ( d == 'd' ) {
-      sv2.detach();
-      sv3.detach();
-      sv4.detach();
-      sv5.detach();
-      sv6.detach();
-      sv7.detach();
-      sv8.detach();
+//      sv2.detach();
+//      sv3.detach();
+//      sv4.detach();
+//      sv5.detach();
+//      sv6.detach();
+//      sv7.detach();
+//      sv8.detach();
       sv11.detach();
       sv12.detach();
       //sv13.detach();
@@ -153,7 +155,7 @@ void loop()
       if (i == 0) {
         analog1 += d;
         Serial.println("analog0  : " + String(analog0, DEC));
-        Serial.println("analog1 : " + String(analog1, DEC));
+        //Serial.println("analog1 : " + String(analog1, DEC));
       }
       i--;
     }
@@ -163,19 +165,21 @@ void loop()
       analog0 = 0;
       analog1 = 0;
       i = 7;
-    } else if ( d == 'x' ) {
-      //sv5.writeMicroseconds(analog9);
-      //moveShaft(sv5, analog0, 5);
-      //Serial.println("camera x  : " + String(analog9, DEC));
-      analog0 = 0;
-      i = 7;
-    } else if ( d == 'y' ) {
-      //sv6.writeMicroseconds(analog9);
-      //moveShaft(sv6, analog0, 5);
-      //Serial.println("camera y  : " + String(analog9, DEC));
-      analog0 = 0;
-      i = 7;
+      Serial.println("sv11.read(): " + String(sv11.read(), DEC));
     }
+//    } else if ( d == 'x' ) {
+//      //sv5.writeMicroseconds(analog9);
+//      //moveShaft(sv5, analog0, 5);
+//      //Serial.println("camera x  : " + String(analog9, DEC));
+//      analog0 = 0;
+//      i = 7;
+//    } else if ( d == 'y' ) {
+//      //sv6.writeMicroseconds(analog9);
+//      //moveShaft(sv6, analog0, 5);
+//      //Serial.println("camera y  : " + String(analog9, DEC));
+//      analog0 = 0;
+//      i = 7;
+//    }
     digitalWrite(13, LOW);   //LED消灯
   }
 }

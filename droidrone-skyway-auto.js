@@ -351,10 +351,6 @@ function peerStart(destPeerId) {
             setMsgTextArea('stream url: ' + url);
             // video要素のsrcに設定することで、映像を表示する 	 	
             video.prop('src', url);
-            //GamePad監視 一定時間隔で、繰り返し実行される関数 30FPS
-            //if (gamepadNo !== -1) {
-            //setInterval(gamePadListen, 1000 / 30);
-            //}
         });
         call.on('error', function (err) {
             setMsgTextArea('call-err : ' + err);
@@ -365,7 +361,8 @@ function peerStart(destPeerId) {
 //地図クリア
 var rPoly;
 var sPoly;
-
+var gamepad;
+var gamePadInterval;
 function initialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = {
@@ -477,7 +474,57 @@ function initialize() {
     padg.lineTo(100, 200);
     padg.closePath();
     padg.stroke();
-
+    // Gemapad API に対応しているか調べる
+    //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
+    if (!(window.Gamepad)) {
+        $("#commandStat").val('NO GamePad-API.');
+    } else if (!(navigator.getGamepads)) {
+        $("#commandStat").val('NO GamePad.');
+        console.log('NO GamePad. nofunc');
+    } else if (window.GamepadEvent) {
+        // ------------------------------------------------------------
+        // ゲームパッドを接続すると実行されるイベント
+        // ------------------------------------------------------------
+        window.addEventListener("gamepadconnected", function (e) {
+            console.log("ゲームパッドが接続された");
+            console.log(e.gamepad);
+            // ゲームパッドリストを取得する
+            var gamepad_list = navigator.getGamepads();
+            if (gamepad_list.length === 0) {
+                $("#commandStat").val('NO GamePad.');
+                console.log('NO GamePad.' + gamepad_list.length);
+                return;
+            }
+            for (i = 0; i < gamepad_list.length; i++) {
+                // Gamepad オブジェクトを取得する
+                if (!gamepad_list[i]) {
+                    continue;
+                }
+                gamepad = gamepad_list[i];
+            }
+            // ゲームパッドの識別名
+            var gStr = "id: " + gamepad.id + "\n";
+            // ゲームパッドの物理的な接続状態
+            gStr += "connected: " + gamepad.connected + "\n";
+            // マッピングタイプ情報
+            gStr += "mapping: " + gamepad.mapping + "\n";
+            $("#commandStat").val(gStr);
+            console.log(gStr);
+            //GamePad監視 一定時間隔で、繰り返し実行される関数 10FPS
+            clearInterval(gamePadInterval);
+            gamePadInterval = setInterval(gamePadListen, 100);
+        });
+        // ------------------------------------------------------------
+        // ゲームパッドの接続を解除すると実行されるイベント
+        // ------------------------------------------------------------
+        window.addEventListener("gamepaddisconnected", function (e) {
+            console.log("ゲームパッドの接続が解除された");
+            console.log(e.gamepad);
+            $("#commandStat").val("ゲームパッドの接続が解除されました。");
+            //http://qiita.com/mimoe/items/629f535ffbd9e78db83b
+            clearInterval(gamePadInterval);
+        });
+    }
     //Camera servo control　
     //レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
     //Xカメラ操作
@@ -561,8 +608,8 @@ function initialize() {
         //sPoly.setMap(null);
         rPoly.setMap(null);
 	
-//ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
-//MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
+        //ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
+        //MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
 	rPath.clear();
 	//rPath.push(sPos);
     });
@@ -570,7 +617,39 @@ function initialize() {
     //テスト
     $('#snapshot-btn').click(getSnap);
 }
-
+ var lastAxes;
+ function gamePadListen() {
+     navigator.getGamepads();
+    // 軸リスト axes
+    var axes = gamepad.axes;
+    if ( axes !== lastAxes ) { 
+        //http://www.w3.org/TR/gamepad/#remapping
+        //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
+        //左スティック　左右　axes[0] (-1.0 ~ +1.0)
+        //左スティック　上下　axes[1] 
+        //右スティック　左右　axes[2]
+        //右スティック　上下　axes[3]
+        //console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
+        pMouse.x = (axes[0] * 100) + 100;
+        pMouse.y = (axes[1] * 100) + 100;
+        padDraw();
+    }
+    lastAxes = axes;
+    /*   // ボタンリスト
+     var str;
+     var buttons = gamepad.buttons; 		 str += "buttons: {\n";
+     var j;
+     var n = buttons.length;
+     for (j = 0; j < n; j++) {
+     // GamepadButton オブジェクトを取得
+     var button = buttons[j];
+     str += "  \"" + j + "\": { ";
+     // ボタン押下状態
+     str += "pressed:" + button.pressed + " , ";
+     // ボタン入力強度
+     str += "value:" + button.value + " }\n";
+     } */
+}       
 //マウスによるPAD操作の描画
 function  padDraw() {
     // クリア
