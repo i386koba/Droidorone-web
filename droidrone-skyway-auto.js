@@ -478,16 +478,13 @@ function initialize() {
     //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
     if (!(window.Gamepad)) {
         $("#commandStat").val('NO GamePad-API.');
-    } else if (!(navigator.getGamepads)) {
-        $("#commandStat").val('NO GamePad.');
-        console.log('NO GamePad. nofunc');
     } else if (window.GamepadEvent) {
-        // ------------------------------------------------------------
         // ゲームパッドを接続すると実行されるイベント
-        // ------------------------------------------------------------
+        // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
+        // http://peekness.blog.jp/archives/31808206.html
         window.addEventListener("gamepadconnected", function (e) {
             console.log("ゲームパッドが接続された");
-            console.log(e.gamepad);
+            //console.log(e.gamepad);
             // ゲームパッドリストを取得する
             var gamepad_list = navigator.getGamepads();
             if (gamepad_list.length === 0) {
@@ -509,7 +506,6 @@ function initialize() {
             // マッピングタイプ情報
             gStr += "mapping: " + gamepad.mapping + "\n";
             $("#commandStat").val(gStr);
-            console.log(gStr);
             //GamePad監視 一定時間隔で、繰り返し実行される関数 10FPS
             clearInterval(gamePadInterval);
             gamePadInterval = setInterval(gamePadListen, 100);
@@ -687,6 +683,7 @@ function  padDraw() {
     var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
     var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
     commandStr = "BTC:" + xPWM + "" + yPWM + "m";
+    $("#mXY").html(pMouse.x + ", " + pMouse.y);
 }
 
 var map;
