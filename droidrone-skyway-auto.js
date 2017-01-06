@@ -361,7 +361,7 @@ function peerStart(destPeerId) {
 //地図クリア
 var rPoly;
 var sPoly;
-var gamepad;
+var gamePadID;
 var gamePadInterval;
 function initialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
@@ -398,8 +398,8 @@ function initialize() {
     mCanvas = $("#mouseCanvas").get(0);
     mouseg = mCanvas.getContext("2d");
     //初期化
-    pMouse.x = 100;
-    pMouse.y = 100;
+    pMouse.x = 120;
+    pMouse.y = 120;
     padDraw();
 
     //HTML5のcanvas内の複数の画像をドラッグ＆ドロップさせてみる http://qiita.com/akase244/items/b801f435e85ea67a70eb
@@ -408,7 +408,7 @@ function initialize() {
         var rect = e.target.getBoundingClientRect();
         pMouse.x = e.clientX - rect.left;
         pMouse.y = e.clientY - rect.top;
-        if (pMouse.x > 90 && pMouse.x < 110 && pMouse.y > 90 && pMouse.y < 110) {
+        if (pMouse.x > 100 && pMouse.x < 140 && pMouse.y > 100 && pMouse.y < 140) {
             isDragging = true;
         }
     }, false);
@@ -416,8 +416,8 @@ function initialize() {
     // ドラッグ終了
     pCanvas.addEventListener('mouseup', function (e) {
         isDragging = false;
-        pMouse.x = 100;
-        pMouse.y = 100;
+        pMouse.x = 120;
+        pMouse.y = 120;
         padDraw();
     }, false);
 
@@ -437,8 +437,8 @@ function initialize() {
     // 要素からマウスが出た際の処理
     pCanvas.addEventListener("mouseout", function (e) {
         isDragging = false;
-        pMouse.x = 100;
-        pMouse.y = 100;
+        pMouse.x = 120;
+        pMouse.y = 120;
         padDraw();
     }, false);
     //サーボPWMの制御幅で角度コントロール
@@ -465,55 +465,67 @@ function initialize() {
     });
     //PAD十字の描画　http://www.htmq.com/canvas/lineTo.shtml
     padg.beginPath();
-    padg.moveTo(0, 100);
-    padg.lineTo(200, 100);
+    padg.moveTo(0, 120);
+    padg.lineTo(240, 120);
     padg.closePath();
     padg.stroke();
     padg.beginPath();
-    padg.moveTo(100, 0);
-    padg.lineTo(100, 200);
+    padg.moveTo(120, 0);
+    padg.lineTo(120, 240);
     padg.closePath();
     padg.stroke();
-    // Gemapad API に対応しているか調べる
+    //センター位置の四角
+    padg.strokeRect(100, 100, 40, 40);
+    
+    // Gemapad API
     //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
-    if (!(window.Gamepad)) {
-        $("#commandStat").val('NO GamePad-API.');
-    } else if (window.GamepadEvent) {
+    // 
+    // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
+    // http://peekness.blog.jp/archives/31808206.html
+    
+    if (window.GamepadEvent) {
+        console.log("GamepadEvent!");
         // ゲームパッドを接続すると実行されるイベント
-        // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
-        // http://peekness.blog.jp/archives/31808206.html
-        window.addEventListener("gamepadconnected", function (e) {
-            console.log("ゲームパッドが接続された");
-            //console.log(e.gamepad);
+        //window.addEventListener("gamepadconnected", function (e) {
+        // console.log(e.gamepad);
+        //ブラウザ起動時にpadのボタン何を押してもgamepadconnectedが発火しない。
+        //ブラウザのタグを切り替えると発火する模様。
+        //不便なので手動にする
+        $("#gpSW").click(function () {
             // ゲームパッドリストを取得する
             var gamepad_list = navigator.getGamepads();
-            if (gamepad_list.length === 0) {
-                $("#commandStat").val('NO GamePad.');
-                console.log('NO GamePad.' + gamepad_list.length);
-                return;
-            }
+            console.log(gamepad_list);
+            var gamePad = false;
             for (i = 0; i < gamepad_list.length; i++) {
                 // Gamepad オブジェクトを取得する
                 if (!gamepad_list[i]) {
                     continue;
                 }
-                gamepad = gamepad_list[i];
+                gamePad = gamepad_list[i];
+                gamePadID = i; //Loop中の接続確認のためID指定
             }
-            // ゲームパッドの識別名
-            var gStr = "id: " + gamepad.id + "\n";
-            // ゲームパッドの物理的な接続状態
-            gStr += "connected: " + gamepad.connected + "\n";
-            // マッピングタイプ情報
-            gStr += "mapping: " + gamepad.mapping + "\n";
-            $("#commandStat").val(gStr);
-            //GamePad監視 一定時間隔で、繰り返し実行される関数 10FPS
-            clearInterval(gamePadInterval);
-            gamePadInterval = setInterval(gamePadListen, 100);
+            //GamePadがある。
+            if ( gamePad ) {
+                // ゲームパッドの識別名
+                var gStr = "id: " + gamePad.id + "\n";
+                // ゲームパッドの物理的な接続状態
+                gStr += "connected: " + gamePad.connected + "\n";
+                // マッピングタイプ情報
+                gStr += "mapping: " + gamePad.mapping + "\n";
+                $("#commandStat").val(gStr + "ゲームパッドが接続されました\n");
+                //GamePad監視 一定時間隔で、繰り返し実行される関数 10FPS
+                clearInterval(gamePadInterval);
+                gamePadInterval = setInterval(gamePadListen, 100);
+                console.log("ゲームパッドが接続されました");
+                //jQueryのprop()でdisabled属性を切り替える http://qiita.com/pugiemonn/items/5db6fb8fd8a303406b17
+                $("#gpSW").prop("disabled", true);
+            } else {
+                $("#commandStat").val("ゲームパッドが接続されていません\n");
+            }
         });
-        // ------------------------------------------------------------
         // ゲームパッドの接続を解除すると実行されるイベント
-        // ------------------------------------------------------------
         window.addEventListener("gamepaddisconnected", function (e) {
+        //$(window).on("gamepaddisconnected", function (e) {      
             console.log("ゲームパッドの接続が解除された");
             console.log(e.gamepad);
             $("#commandStat").val("ゲームパッドの接続が解除されました。");
@@ -615,9 +627,21 @@ function initialize() {
 }
  var lastAxes;
  function gamePadListen() {
-     navigator.getGamepads();
+    var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
+    var gamePad = gamepad_list[gamePadID]; 
+    //接続確認
+    if (!gamePad) {
+        clearInterval(gamePadInterval);
+        $("#gpSW").prop("disabled", false);
+        console.log("ゲームパッドの接続が解除されました。");
+        $("#commandStat").val("ゲームパッドの接続が解除されました。");
+        pMouse.x = 120;
+        pMouse.y = 120;
+        padDraw();
+        return;
+    }
     // 軸リスト axes
-    var axes = gamepad.axes;
+    var axes = gamePad.axes;
     if ( axes !== lastAxes ) { 
         //http://www.w3.org/TR/gamepad/#remapping
         //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
@@ -626,8 +650,8 @@ function initialize() {
         //右スティック　左右　axes[2]
         //右スティック　上下　axes[3]
         //console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
-        pMouse.x = (axes[0] * 100) + 100;
-        pMouse.y = (axes[1] * 100) + 100;
+        pMouse.x = (axes[0] * 120) + 120;
+        pMouse.y = (axes[1] * 120) + 120;
         padDraw();
     }
     lastAxes = axes;
@@ -677,13 +701,34 @@ function  padDraw() {
     var yC = Number(yCenter);
     var xR = Number(xRange);
     var xC = Number(xCenter);
-    pMouse.x = pMouse.x - 100;
-    pMouse.y = pMouse.y - 100;
+    pMouse.x -= 120;
+    pMouse.y -= 120;
+    //var mStr = parseInt(pMouse.x) + ", " + parseInt(pMouse.y);
+    //GamePADのセンターが出ないので、センターより20pxずれないとpMouseを加算しない。20px以内は0
+   if ( Math.abs(pMouse.x) <= 20 ) {
+        pMouse.x = 0;
+    } else if ( pMouse.x > 20 ) {
+            pMouse.x -= 20; 
+    } else if ( pMouse.x < -20 ) {
+        pMouse.x += 20; 
+    }
+    
+    if ( Math.abs(pMouse.y) <= 20 ) {
+        pMouse.y = 0;
+    } else if ( pMouse.y > 20 ) {
+            pMouse.y -= 20; 
+    } else if ( pMouse.y < -20 ) {
+        pMouse.y += 20; 
+    }
+  
+    
     //Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
     var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
     var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
     commandStr = "BTC:" + xPWM + "" + yPWM + "m";
-    $("#mXY").html(pMouse.x + ", " + pMouse.y);
+    //JavaScriptで指定した数の小数も表示する http://d.hatena.ne.jp/necoyama3/20090904/1252074054
+    //$("#mXY").html(parseFloat(pMouse.x).toFixed(1) + ", " + parseFloat(pMouse.y).toFixed(1));
+    $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y));// + "/" + mStr);
 }
 
 var map;
