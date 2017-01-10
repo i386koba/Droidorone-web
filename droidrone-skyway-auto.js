@@ -482,6 +482,9 @@ function initialize() {
     // 
     // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
     // http://peekness.blog.jp/archives/31808206.html
+    //上記64bit版　Chrome PS2コントローラUSB変換で試してOK。
+    //以下は非Xinputのコントローラー直で動くか？
+    //　HTML5-JavaScript-Gamepad-Controller-Library　https://github.com/kallaspriit/HTML5-JavaScript-Gamepad-Controller-Library
     
     if (window.GamepadEvent) {
         console.log("GamepadEvent!");
