@@ -361,6 +361,7 @@ function peerStart(destPeerId) {
 //地図クリア
 var rPoly;
 var sPoly;
+var gPoly;
 var gamePadID;
 var gamePadInterval;
 function initialize() {
@@ -384,6 +385,12 @@ function initialize() {
         strokeOpacity: 1.0,
         strokeWeight: 2,
         editable: true,
+        zIndex: 1// 重なりの優先値(z-index)
+    });
+    gPoly = new google.maps.Polyline({
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 1,
         zIndex: 1// 重なりの優先値(z-index)
     });
     readJData('{"no":0,"lat":35.8401073,"lng":137.9581047,"alti":700,"btr":"BAT:0.0"}');
@@ -774,6 +781,7 @@ for (var i = 0; i < ori8.length; i++) {
 var sPos;
 var rPos = null;
 var lastrPos = null;
+var lastgPos = null;
 var jData;
 var sDragend = false;
 var farstSetPos;
@@ -840,6 +848,7 @@ function readJData(res) {
                 noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
             };
             map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+            lastgPos = gPos;
             //GPSマーカー　赤丸
             gpsMarker = new google.maps.Marker({
                 icon: {path: google.maps.SymbolPath.CIRCLE,
@@ -861,6 +870,7 @@ function readJData(res) {
                 position: gPos,
                 zIndex: 3// 重なりの優先値(z-index)
             });
+ 
             //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
             initInfoWin = new google.maps.InfoWindow({
                 content: '青丸アイコンを現在地にドラッグしてください。'
@@ -905,6 +915,16 @@ function readJData(res) {
             gpsAccCircle.setMap(map);
         }
     }
+    
+    //GPS Line Draw
+     var gDistance = google.maps.geometry.spherical.computeDistanceBetween(gPos, lastgPos);
+     if ( gDistance > 2) {
+        lastgPos = gPos;
+        var gPath = gPoly.getPath();
+        gPath.push(gPos);
+        gPoly.setMap(map);
+    }
+    
     if (roverMarker !== null) {
         roverMarker.setMap(null);
     }
