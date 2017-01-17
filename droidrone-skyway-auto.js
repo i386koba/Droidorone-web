@@ -363,6 +363,7 @@ var gpsMarker = null;
 var rPoly;
 var sPoly;
 var gPoly;
+var gPos = null; //GPSポジ
 
 var gamePadID;
 var gamePadInterval;
@@ -399,9 +400,10 @@ function initialize() {
     //TODO: Geolocation API の使用が　安全なサイトに制限、SSL導入しなければならない、
     //http://netbeans-org.1045718.n5.nabble.com/How-to-debug-https-or-SSL-web-applications-in-netbeans-td2885406.html
     //初回地図定義 サーリューション35.8401073,137.9581047
+    gPos = new google.maps.LatLng(35.8401073, 137.9581047);
     var mapOptions = {
         zoom: 18,
-        center: new google.maps.LatLng(35.8401073, 137.9581047),
+        center: gPos,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         //mapTypeId: google.maps.MapTypeId.TERRAIN
         noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
@@ -662,8 +664,8 @@ function initialize() {
     video = $('#android-video');
     //テスト
     $('#snapshot-btn').click(getSnap);
-
 }
+
 var lastAxes;
 function gamePadListen() {
     var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
@@ -805,19 +807,19 @@ for (var i = 0; i < ori8.length; i++) {
     oriBar += ("|........|........|" + ori8[i]);
 }
 
-var gPos = null; //GPSポジ
-var sPos = null; //軌道設定ポジ
+var sPos = null; //現在地　設定ポジ
 var wPos = null; //ホイル回転推定ポジ
-var rPos = null; //ローバー表示ポジ
+var rPos = null; //ローバー表示ポジ 
 var lastrPos = null;
-var lastgPos = null;
+var subPos = null;
+var lastSubPos = null;
 var jData;
 var sDragend = false;
 var farstSetPos;
 var farstSetMaker = new google.maps.Marker({});
 var reachInfoWin = new google.maps.InfoWindow({
     content: '次の移動場所に行くならClose'
-    //'<button onClick="checkedInfoWin()"></button>'
+            //'<button onClick="checkedInfoWin()"></button>'
 });
 var reachInfoWinClose = false;
 google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
@@ -855,101 +857,24 @@ function readJData(res) {
             }
         }
     }
+
     //GPS受信できない場合
     if (jData.lat === 'NoData') {
         $("#orient").html("GPSが受信できません");
     } else {
         gPos = new google.maps.LatLng(jData.lat, jData.lng);
-        //GPSマーカー描画
-        lastgPos = gPos;
-        //ローバーのセンサーによる現在地
-        if ($('#gpsnOff').prop('checked')) {
-
-        }
-        //マップ中心をローバーアイコンで移動
-        if ($('#MapPanOff').prop('checked')) {
-            map.setCenter(rPos);
-        }
-          
-        //現在地マーカー　赤
-        roverMarker = new google.maps.Marker({
-            position: rPos,
-            icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
-                //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
-                // 矢印中心が先っぽだったのでPath作った。
-                scale: 3,
-                strokeColor: '#FF0000',
-                rotation: jData.rota
-            },
-            map: map,
-            zIndex: 2// 重なりの優先値(z-index)
-        });
-        //移動場所設定　PATH
-        google.maps.event.addListener(map, 'click', function (ev) {
-            if (!sDragend && !$('#autoOff').prop('checked')) {
-                var setPos = ev.latLng;
-                var sPath = sPoly.getPath();
-                sPath.push(setPos);
-                sPoly.setMap(map);
-            }
-        });
         //GPS測定場所アイコン
         gpsMarker.setPosition(gPos);
         //前回GPS精度円を除去
         gpsAccCircle.setMap(null);
         //if (gpsAccCount++ > 10) {
-        gpsAccCount = 0;
+        //gpsAccCount = 0;
         //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
         gpsAccCircle.setCenter(gPos);
         // 中心点(google.maps.LatLng)
         gpsAccCircle.setRadius(jData.accuracy);
         gpsAccCircle.setMap(map);
-        //}
-
-        //GPS Line Draw
-        var gDistance = google.maps.geometry.spherical.computeDistanceBetween(gPos, lastgPos);
-        if (gDistance > 2) {
-            lastgPos = gPos;
-            var gPath = gPoly.getPath();
-            gPath.push(gPos);
-            gPoly.setMap(map);
-        }
     }
-
-    if (roverMarker !== null) {
-        roverMarker.setMap(null);
-    }
-
-
-    //現在位置指定マーカー　青丸
-    sMarker = new google.maps.Marker({
-        icon: {path: google.maps.SymbolPath.CIRCLE,
-            scale: 3,
-            strokeColor: '#0000FF'
-        },
-        draggable: true, // ドラッグ可能にする
-        map: map,
-        position: gPos,
-        zIndex: 3// 重なりの優先値(z-index)
-    });
-    //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
-    initInfoWin = new google.maps.InfoWindow({
-        content: '青丸アイコンを現在地にドラッグしてください。'
-    });
-    initInfoWin.open(map, sMarker);
-    ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
-    // マーカーのドロップ（ドラッグ終了）時のイベント
-    google.maps.event.addListener(sMarker, 'dragend', function (ev) {
-        sDragend = true;
-        // イベントの引数evの、プロパティ.latLngが緯度経度。
-        sPos = ev.latLng;
-        initInfoWin.close();
-        checkInfoWin.open(map, sMarker);
-        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
-        google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
-            sDragend = false;
-        });
-    });
     //BuleTooth受信解析（RCバッテリー電圧）
     var btr = jData.btr;
     if (btr !== "" && lastBtR !== btr) {
@@ -962,7 +887,7 @@ function readJData(res) {
         }
 
         //BuleTooth受信解析（タイヤ回転センサ）
-        if (btr.substr(0, 4) === "RPS:" && btr.substr(4) !== '0' && rPos !== null) {
+        if (btr.substr(0, 4) === "RPS:" && btr.substr(4) !== '0' && wPos !== null) {
             //タイヤ一回転カウントでの距離
             var countM = Number($("#countM").val()) * 0.001;
             //ホイルカウントから1秒間の距離を計算
@@ -1001,7 +926,87 @@ function readJData(res) {
             }
         }
     }
-  
+    //マップ中心をローバーアイコンで移動
+    if ($('#MapPanOff').prop('checked')) {
+        map.setCenter(rPos);
+    }
+    //ローバーのセンサーによる現在地
+    if ($('#gpsnOn').prop('checked')) {
+        rPos = gPos;
+    }
+    //ホイルセンサーによる
+    if ($('#gpsnOff').prop('checked')) {
+        //移動場所設定　PATH
+        google.maps.event.addListener(map, 'click', function (ev) {
+            if (!sDragend && !$('#autoOff').prop('checked')) {
+                var setPos = ev.latLng;
+                var sPath = sPoly.getPath();
+                sPath.push(setPos);
+                sPoly.setMap(map);
+            }
+        });
+        //現在位置指定マーカー　青丸
+        sMarker = new google.maps.Marker({
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 3,
+                strokeColor: '#0000FF'
+            },
+            draggable: true, // ドラッグ可能にする
+            map: map,
+            position: gPos,
+            zIndex: 3// 重なりの優先値(z-index)
+        });
+        //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
+        initInfoWin = new google.maps.InfoWindow({
+            content: '青丸アイコンを現在地にドラッグしてください。'
+        });
+        initInfoWin.open(map, sMarker);
+        ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
+        // マーカーのドロップ（ドラッグ終了）時のイベント
+        google.maps.event.addListener(sMarker, 'dragend', function (ev) {
+            sDragend = true;
+            // イベントの引数evの、プロパティ.latLngが緯度経度。
+            sPos = ev.latLng;
+            initInfoWin.close();
+            checkInfoWin.open(map, sMarker);
+            //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
+            google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
+                sDragend = false;
+            });
+        });
+    }
+
+    if (roverMarker !== null) {
+        roverMarker.setMap(null);
+    }
+    //ローバーマーカー　赤
+    roverMarker = new google.maps.Marker({
+        position: rPos,
+        icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
+            //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
+            // 矢印中心が先っぽだったのでPath作った。
+            scale: 3,
+            strokeColor: '#FF0000',
+            rotation: jData.rota
+        },
+        map: map,
+        zIndex: 2// 重なりの優先値(z-index)
+    });
+
+    //GPS Line Draw
+    if (lastsubPos === null) {
+        lastgPos = ga
+    }
+    var gDistance = google.maps.geometry.spherical.computeDistanceBetween(gPos, lastgPos);
+    if (gDistance > 2) {
+        lastgPos = gPos;
+        var gPath = gPoly.getPath();
+        gPath.push(gPos);
+        gPoly.setMap(map);
+    }
+
+
     //TODO: 自動操縦 (将来的にはAndroidで、）
     var setDis = 1.0; //自動運転停止、設定位置までの距離
     if (!$('#autoOff').prop('checked')) {
