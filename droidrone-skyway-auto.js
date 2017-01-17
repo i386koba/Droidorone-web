@@ -144,15 +144,15 @@ function loadPeerId() {
         }
     });
     //How to get user email from google plus oauth http://stackoverflow.com/questions/11606101/how-to-get-user-email-from-google-plus-oauth
-     var request = gapi.client.request({
-         'path': '/oauth2/v1/userinfo',//?alt=json',
-         'method': 'GET'
-     });
-     request.execute(function(resp) {
-         console.log(resp);
-         googleName = resp.name;
-         googleID = resp.id;
-     });
+    var request = gapi.client.request({
+        'path': '/oauth2/v1/userinfo', //?alt=json',
+        'method': 'GET'
+    });
+    request.execute(function (resp) {
+        console.log(resp);
+        googleName = resp.name;
+        googleID = resp.id;
+    });
 }
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
 //skyWayFolderIDの下に読み込み共有の経路ファイル、写真用のTime番号のフォルダ作る。
@@ -162,18 +162,18 @@ function loadPeerId() {
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
 var saveDirID = 0;
 function gMkdir(name, url, data) {
-    var request = gapi.client.drive.files.insert({ 
+    var request = gapi.client.drive.files.insert({
         'path': '/upload/drive/v2/files',
         'method': 'POST',
         "title": name,
         "parents": [{"id": skyWayFolderID}],
         "mimeType": "application/vnd.google-apps.folder"
     });
-    request.execute(function(insert) {
+    request.execute(function (insert) {
         saveDirID = insert.id;
         console.log("application/vnd.google-apps.folder");
         console.log(insert);
-	setMsgTextArea('JpegSaveDirID :' + saveDirID);
+        setMsgTextArea('JpegSaveDirID :' + saveDirID);
         //permissions change(共有（読み出し））
         var body = {
             //'value': value,//mailAddress
@@ -185,15 +185,15 @@ function gMkdir(name, url, data) {
             'resource': body,
             'sendNotificationEmails': 'false'  //"false"にすると通知メールが飛びません
         });
-        perRequest.execute(function(resp) { 
-	    console.log('folder permissions:Done');
-	    console.log(resp);
-	    saveJpegM(name + ".jpg", url, data);
+        perRequest.execute(function (resp) {
+            console.log('folder permissions:Done');
+            console.log(resp);
+            saveJpegM(name + ".jpg", url, data);
         });
         //全ユーザーの記録先をフォルダファイルで記録
         //（gapi.client.drive.files.insertがJSでフォルダのみの模様）
         var json = eval('(' + data + ')');
-        var recRequest = gapi.client.drive.files.insert({ 
+        var recRequest = gapi.client.drive.files.insert({
             'path': '/upload/drive/v2/files',
             'method': 'POST',
             //ユーザー名には、アンパサンド（&）、等号（=）、山かっこ（<、>）、プラス記号（+）、カンマ（,）を使用できません。また、1 行に複数のピリオド（.）を含めることはできません。
@@ -201,9 +201,9 @@ function gMkdir(name, url, data) {
             "parents": [{"id": MapLinkGDFolderID}],
             //https://developers.google.com/drive/v3/web/mime-types
             "mimeType": "application/vnd.google-apps.folder",
-            'description' : [saveDirID, googleID].join(',')
+            'description': [saveDirID, googleID].join(',')
         });
-        recRequest.execute(function(insert) {
+        recRequest.execute(function (insert) {
             var fileID = insert.id;
             console.log('mapLink:' + fileID);
             console.log(insert);
@@ -236,36 +236,36 @@ const close_delim = "\r\n--" + boundary + "--";
 function saveJpegM(name, url, data) {
     var contentType = 'image/jpeg'; // 'application/octet-stream';
     var metadata = {
-      'title': name,
-      'mimeType': contentType,
-      'parents': [{'id': saveDirID}], //親フォルダここで指定
-      'description' : data
+        'title': name,
+        'mimeType': contentType,
+        'parents': [{'id': saveDirID}], //親フォルダここで指定
+        'description': data
     };
     //toDataURLのファイルの先頭　data:image/jpeg;base64,を削除
-    var binaryData = url.replace(/^data:image\/(png|jpeg);base64,/,  "");
+    var binaryData = url.replace(/^data:image\/(png|jpeg);base64,/, "");
     var multipartRequestBody =
-        delimiter + 'Content-Type: application/json\r\n\r\n' +
-        JSON.stringify(metadata) + delimiter +
-        'Content-Type: ' + contentType + '\r\n' +
-        'Content-Transfer-Encoding: base64\r\n' +
-        '\r\n' +  binaryData + close_delim;
+            delimiter + 'Content-Type: application/json\r\n\r\n' +
+            JSON.stringify(metadata) + delimiter +
+            'Content-Type: ' + contentType + '\r\n' +
+            'Content-Transfer-Encoding: base64\r\n' +
+            '\r\n' + binaryData + close_delim;
 
     var request = gapi.client.request({
         'path': '/upload/drive/v2/files',
         'method': 'POST',
         'params': {'uploadType': 'multipart'},
-        'headers': { 'Content-Type': 'multipart/mixed; boundary="' + boundary + '"' },
+        'headers': {'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'},
         'body': multipartRequestBody
     });
-   
-    request.execute(function(file) {
+
+    request.execute(function (file) {
         console.log('image/jpeg');
         console.log(file);
-	//console.log(multipartRequestBody);
+        //console.log(multipartRequestBody);
     });
 }
 
-function getSnap(){
+function getSnap() {
     var videoWidth = video.get(0).videoWidth;
     var videoHeight = video.get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
@@ -276,27 +276,27 @@ function getSnap(){
     //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
     var tmpCanvas = $('#tmp-canvas').get(0);
     var tmpCtx = tmpCanvas.getContext("2d");
-    tmpCtx.drawImage(video.get(0) ,0 ,0);
+    tmpCtx.drawImage(video.get(0), 0, 0);
     var img = new Image();
     // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
     img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
     // 日時からGD画像保存フォルダを作成 new Date().toISOString()
-    if (saveDirID === 0 ) {
-	gMkdir(new Date().getTime(), img.src, $("#JSON").text());
+    if (saveDirID === 0) {
+        gMkdir(new Date().getTime(), img.src, $("#JSON").text());
     } else {
-	saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
+        saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
     }
     //mapLink("test", "disTest");
-    img.onload = function(){
+    img.onload = function () {
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
         //縦長なら回転 
         //if (videoWidth < videoHeight) {
-            //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
-            //↑表示Canvasは回転するがキャプチャIMGは回転しない
-            //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
-            //$(img).css("-webkit-transform", "rotate(270deg)");
-            //console.log("rotate.");
+        //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
+        //↑表示Canvasは回転するがキャプチャIMGは回転しない
+        //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
+        //$(img).css("-webkit-transform", "rotate(270deg)");
+        //console.log("rotate.");
         //}
         //console.log("img.width:hight = " + img.width + " : " + img.height);
         $('#snap-area').append(img);
@@ -337,7 +337,7 @@ function peerStart(destPeerId) {
             }
         });
     });
-    
+
     peer.on('call', function (call) {
         // - 相手のIDはCallオブジェクトのpeerプロパティに存在する
         setMsgTextArea('Call from : ' + call.peer);
@@ -367,15 +367,15 @@ var gamePadInterval;
 function initialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = {
-        //: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
+    //: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
     //};
     rPoly = new google.maps.Polyline({
         strokeColor: '#0000FF',
         strokeOpacity: 1.0,
         strokeWeight: 3,
         //icons: [{ 最後にしかマーカーされない
-            //icon: lineSymbol,
-            //offset: '100%'
+        //icon: lineSymbol,
+        //offset: '100%'
         //}],
         zIndex: 1// 重なりの優先値(z-index)
     });
@@ -393,7 +393,8 @@ function initialize() {
         strokeWeight: 1,
         zIndex: 1// 重なりの優先値(z-index)
     });
-    readJData('{"no":0,"lat":35.8401073,"lng":137.9581047,"alti":700,"btr":"BAT:0.0"}');
+    //no = -1 で　初回地図表示
+    readJData('{"no":"int","lat":35.8401073,"lng":137.9581047,"alti":700,"btr":"BAT:0.0"}');
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
@@ -483,7 +484,7 @@ function initialize() {
     padg.stroke();
     //センター位置の四角
     padg.strokeRect(100, 100, 40, 40);
-    
+
     // Gemapad API
     //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
     // 
@@ -492,7 +493,7 @@ function initialize() {
     //上記64bit版　Chrome PS2コントローラUSB変換で試してOK。
     //以下は非Xinputのコントローラー直で動くか？
     //　HTML5-JavaScript-Gamepad-Controller-Library　https://github.com/kallaspriit/HTML5-JavaScript-Gamepad-Controller-Library
-    
+
     if (window.GamepadEvent) {
         console.log("GamepadEvent!");
         // ゲームパッドを接続すると実行されるイベント
@@ -515,7 +516,7 @@ function initialize() {
                 gamePadID = i; //Loop中の接続確認のためID指定
             }
             //GamePadがある。
-            if ( gamePad ) {
+            if (gamePad) {
                 // ゲームパッドの識別名
                 var gStr = "id: " + gamePad.id + "\n";
                 // ゲームパッドの物理的な接続状態
@@ -535,7 +536,7 @@ function initialize() {
         });
         // ゲームパッドの接続を解除すると実行されるイベント
         window.addEventListener("gamepaddisconnected", function (e) {
-        //$(window).on("gamepaddisconnected", function (e) {      
+            //$(window).on("gamepaddisconnected", function (e) {      
             console.log("ゲームパッドの接続が解除された");
             console.log(e.gamepad);
             $("#commandStat").val("ゲームパッドの接続が解除されました。");
@@ -554,19 +555,19 @@ function initialize() {
     //Center Click
     $("#xCset").click(function () {
         $("#xCamera").val($("#xCCenter").val());
-        commandStr =  "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
+        commandStr = "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
 
     //xCamera　中心　xCCenter
     $("#xCamera").val($("#xCCenter").val());
     $("#xCCenter").on('input', function () {
         $("#xCamera").val($("#xCCenter").val());
-        commandStr =  "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
+        commandStr = "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
 
     //Yカメラ操作
     $("#yCamera").on('input', function () {
-        commandStr = "BTC:" +  ("0" + $("#yCamera").val()).slice(-4) + "y";
+        commandStr = "BTC:" + ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
 
     //Center Click
@@ -598,7 +599,7 @@ function initialize() {
     $("#btConn").click(function () {
         commandStr = "btConnect";
     });
-   //switchCamera Click
+    //switchCamera Click
     $("#camSW").click(function () {
         commandStr = "switchCamera";
     });
@@ -615,30 +616,30 @@ function initialize() {
     $("#RcBatVol").html("-.-");
     //TODO: 位置データデバック用自動更新 
     //setInterval("autoCommandTest()", 1000);
-    
+
     //マーカー、パスのクリア
     $("#mapClear").click(function () {
-        for ( var i = 0; i < rMarkerArray.length; i++ ) { 
+        for (var i = 0; i < rMarkerArray.length; i++) {
             rMarkerArray[i].setMap(null);
         }
         rMarkerArray = [];
         var rPath = rPoly.getPath();
         //sPoly.setMap(null);
         rPoly.setMap(null);
-	
+
         //ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
         //MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
-	rPath.clear();
-	//rPath.push(sPos);
+        rPath.clear();
+        //rPath.push(sPos);
     });
     video = $('#android-video');
     //テスト
     $('#snapshot-btn').click(getSnap);
 }
- var lastAxes;
- function gamePadListen() {
+var lastAxes;
+function gamePadListen() {
     var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
-    var gamePad = gamepad_list[gamePadID]; 
+    var gamePad = gamepad_list[gamePadID];
     //接続確認
     if (!gamePad) {
         clearInterval(gamePadInterval);
@@ -652,7 +653,7 @@ function initialize() {
     }
     // 軸リスト axes
     var axes = gamePad.axes;
-    if ( axes !== lastAxes ) { 
+    if (axes !== lastAxes) {
         //http://www.w3.org/TR/gamepad/#remapping
         //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
         //左スティック　左右　axes[0] (-1.0 ~ +1.0)
@@ -679,7 +680,7 @@ function initialize() {
      // ボタン入力強度
      str += "value:" + button.value + " }\n";
      } */
-}       
+}
 //マウスによるPAD操作の描画
 function  padDraw() {
     // クリア
@@ -715,23 +716,22 @@ function  padDraw() {
     pMouse.y -= 120;
     //var mStr = parseInt(pMouse.x) + ", " + parseInt(pMouse.y);
     //GamePADのセンターが出ないので、センターより20pxずれないとpMouseを加算しない。20px以内は0
-   if ( Math.abs(pMouse.x) <= 20 ) {
+    if (Math.abs(pMouse.x) <= 20) {
         pMouse.x = 0;
-    } else if ( pMouse.x > 20 ) {
-            pMouse.x -= 20; 
-    } else if ( pMouse.x < -20 ) {
-        pMouse.x += 20; 
+    } else if (pMouse.x > 20) {
+        pMouse.x -= 20;
+    } else if (pMouse.x < -20) {
+        pMouse.x += 20;
     }
-    
-    if ( Math.abs(pMouse.y) <= 20 ) {
+
+    if (Math.abs(pMouse.y) <= 20) {
         pMouse.y = 0;
-    } else if ( pMouse.y > 20 ) {
-            pMouse.y -= 20; 
-    } else if ( pMouse.y < -20 ) {
-        pMouse.y += 20; 
+    } else if (pMouse.y > 20) {
+        pMouse.y -= 20;
+    } else if (pMouse.y < -20) {
+        pMouse.y += 20;
     }
-  
-    
+
     //Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
     var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
     var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
@@ -764,8 +764,8 @@ var setFinCircle = new google.maps.Circle({
 var gpsMarker = null;
 var sMarker = null;
 var roverMarker = null;
-//ＧＰＳ起動時のmap作成フラグ
-var onGps = false;
+//map作成確認フラグ
+var mapOn = false;
 //var rInfoWin = new google.maps.InfoWindow();
 var checkInfoWin = new google.maps.InfoWindow({
     content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
@@ -826,21 +826,19 @@ function readJData(res) {
             peerdConn.send(commandStr);
             //CameraSwitch 連続押し対応
             if (commandStr === "switchCamera") {
-                commandStr ="";
+                commandStr = "";
             }
         }
     }
     //初回GPS受信できない場合　サーリューション35.8401073,137.9581047
     if (jData.lat === 'NoData') {
-        if (!onGps) {
-            //readJData('{"no":0,"lat":35.8401073,"lng":137.9581047,"alti":700,"btr":"BAT:0.0"}');
-        }
+        $("#orient").html("GPSが受信できません");
         //GPSデータ受信
     } else {
         //console.debug('Debug!! jData:' + res);
         var gPos = new google.maps.LatLng(jData.lat, jData.lng);
-        //GPS受信初回、地図,マーカーなど定義
-        if (!onGps) {
+        //初回地図定義
+        if (!mapOn) {
             var mapOptions = {
                 zoom: 18,
                 center: gPos, mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -848,17 +846,45 @@ function readJData(res) {
                 noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
             };
             map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-            lastgPos = gPos;
+            mapOn = true;
             //GPSマーカー　赤丸
             gpsMarker = new google.maps.Marker({
-                icon: {path: google.maps.SymbolPath.CIRCLE,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
                     scale: 3,
                     strokeColor: '#FF0000'
                 },
                 map: map,
                 zIndex: 1// 重なりの優先値(z-index)
             });
+        }
+        //GPSマーカー描画
+        if (jData.no !== "int") {
+            lastgPos = gPos;
+            //移動場所設定　PATH
+            google.maps.event.addListener(map, 'click', function (ev) {
+                if (!sDragend && !$('#autoOff').prop('checked')) {
+                    var setPos = ev.latLng;
+                    var sPath = sPoly.getPath();
+                    sPath.push(setPos);
+                    sPoly.setMap(map);
+                }
+            });
+            //GPS測定場所アイコン
+            gpsMarker.setPosition(gPos);
+            //前回GPS精度円を除去
+            gpsAccCircle.setMap(null);
+            //if (gpsAccCount++ > 10) {
+                gpsAccCount = 0;
+                //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
+                gpsAccCircle.setCenter(gPos);
+                // 中心点(google.maps.LatLng)
+                gpsAccCircle.setRadius(jData.accuracy);
+                gpsAccCircle.setMap(map);
+            //}
+        }
 
+        if ($('#gpsnOff').prop('checked')) {
             //現在位置指定マーカー　青丸
             sMarker = new google.maps.Marker({
                 icon: {path: google.maps.SymbolPath.CIRCLE,
@@ -870,7 +896,7 @@ function readJData(res) {
                 position: gPos,
                 zIndex: 3// 重なりの優先値(z-index)
             });
- 
+
             //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
             initInfoWin = new google.maps.InfoWindow({
                 content: '青丸アイコンを現在地にドラッグしてください。'
@@ -890,41 +916,18 @@ function readJData(res) {
                     sDragend = false;
                 });
             });
-            //移動場所設定　PATH
-            google.maps.event.addListener(map, 'click', function (ev) {
-                if (!sDragend && !$('#autoOff').prop('checked')) {
-                    var setPos = ev.latLng;
-                    var sPath = sPoly.getPath();
-                    sPath.push(setPos);
-                    sPoly.setMap(map);
-                }
-            });
-            //GPS起動確認
-            onGps = true;
-        }
-        //GPS測定場所アイコン
-        gpsMarker.setPosition(gPos);
-        //前回GPS精度円を除去
-        gpsAccCircle.setMap(null);
-        if (gpsAccCount++ > 10) {
-            gpsAccCount = 0;
-            //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
-            gpsAccCircle.setCenter(gPos);
-            // 中心点(google.maps.LatLng)
-            gpsAccCircle.setRadius(jData.accuracy);
-            gpsAccCircle.setMap(map);
         }
     }
-    
+
     //GPS Line Draw
-     var gDistance = google.maps.geometry.spherical.computeDistanceBetween(gPos, lastgPos);
-     if ( gDistance > 2) {
+    var gDistance = google.maps.geometry.spherical.computeDistanceBetween(gPos, lastgPos);
+    if (gDistance > 2) {
         lastgPos = gPos;
         var gPath = gPoly.getPath();
         gPath.push(gPos);
         gPoly.setMap(map);
     }
-    
+
     if (roverMarker !== null) {
         roverMarker.setMap(null);
     }
@@ -970,25 +973,25 @@ function readJData(res) {
             if (distance > 2) {
                 lastrPos = rPos;
                 rPathDraw(rPos);
- 		//video画面をGD保存
-		//attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-		$('#tmp-canvas').attr("width", video.get(0).videoWidth);
-		$('#tmp-canvas').attr("height", video.get(0).videoHeight);
-		//http://www.html5.jp/tag/elements/video.html
-		//videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-		var tmpCanvas = $('#tmp-canvas').get(0);
-		var tmpCtx = tmpCanvas.getContext("2d");
-		tmpCtx.drawImage(video.get(0) ,0 ,0);
-		//第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-		var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
+                //video画面をGD保存
+                //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+                $('#tmp-canvas').attr("width", video.get(0).videoWidth);
+                $('#tmp-canvas').attr("height", video.get(0).videoHeight);
+                //http://www.html5.jp/tag/elements/video.html
+                //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+                var tmpCanvas = $('#tmp-canvas').get(0);
+                var tmpCtx = tmpCanvas.getContext("2d");
+                tmpCtx.drawImage(video.get(0), 0, 0);
+                //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+                var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
                 jData.lat = rPos.lat();
                 jData.lng = rPos.lng();
                 var rJson = JSON.stringify(jData);
-		//記録用GDフォルダ作製
+                //記録用GDフォルダ作製
                 if (saveDirID === 0) {
                     gMkdir(jData.time, url, rJson);
                 } else {
-		    saveJpegM(jData.time + ".jpg", url, rJson);
+                    saveJpegM(jData.time + ".jpg", url, rJson);
                 }
             }
 

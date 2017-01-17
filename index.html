@@ -18,30 +18,35 @@
     <body>
         <!--<video id="android-video" autoplay></video> style="position: absolute; top: 50px; left: 50px; z-index: 5;"
          Andoid 画面消灯時にカメラが回転するのに対応して320X320　の正方形にする。 -->
-        <button id="camSW" style="position: absolute; top: 20px; left: 150px; z-index: 3;">カメラ切替</button>
-        <video id="android-video" style="height: 320px; width: 320px; position: absolute; top: 50px; left: 0px; z-index: 1;" autoplay></video>
-        <pre id="orient" style="position: absolute; top: 50px; left: 0px; z-index: 2;"></pre> 
         <!-- HTML5 canvasを重ねる http://www.happytrap.jp/blogs/2012/04/15/8835/     <div style="position: relative;"> -->
-        <canvas id="mouseCanvas" width="240" height="240" style="position: absolute; left: 20px; top: 360px; z-index: 4; border:1px solid #CCC;"></canvas>
-        <canvas id="padCanvas" width="240" height="240" style="position: absolute; left: 20px; top: 360px; z-index: 5;"></canvas>
-        
-        <div style="height:600px; width:100%; background-color: #AAA" id="map-canvas"></div>
-        <button id="gpSW">GamePad有効</button> 
-        Map表示:
+        <video id="android-video" style="height: 320px; width: 320px; position: absolute; top: 40px; left: 0px; z-index: 2;" autoplay></video>
+        <pre id="orient" style="position: absolute; top: 360px; left: 0px; z-index: 3;"></pre> 
+        <canvas id="mouseCanvas" width="240" height="240" style="position: absolute; left: 800px; top: 130px; z-index: 4; border:1px solid #CCC;"></canvas>
+        <canvas id="padCanvas" width="240" height="240" style="position: absolute; left: 800px; top: 130px; z-index: 5;"></canvas>
+        <button id="gpSW" style="position: absolute; top: 380px; left: 900px; z-index: 3;">GamePad有効</button> 
+        <div style="height:400px; width:1100px; background-color: #AAA" id="map-canvas"></div>
+        <button id="camSW">カメラ切替</button>
+        中心：
+        (<label for="gpsOn">GPS軌跡</label>
+        <input id="gpsOn" name="RadioGroup1" type="radio"  checked="checked" />
+        / <label for="gpsnOff">センサ軌跡</label>
+        <input id="gpsOff" name="RadioGroup1" type="radio" />)
+        , Map表示:
         (<label for="MapPanOff">現在地</label>
-        <input id="MapPanOff" name="RadioGroup2" type="radio"  checked="checked" />)
-        (<label for="MapPanOn">パン</label>
+        <input id="MapPanOff" name="RadioGroup2" type="radio"  checked="checked" />
+        / <label for="MapPanOn">パン</label>
         <input id="MapPanOn" name="RadioGroup2" type="radio" />)
-        /自動操縦:
+        , 自動操縦:
         (<label for="autoOff">Off</label>
-        <input id="autoOff" name="RadioGroup3" type="radio"  checked="checked" />)
-        (<label for="selfOn">半自動</label>
-        <input id="selfOn" name="RadioGroup3" type="radio" />)
-        (<label for="autoOn">On</label>
+        <input id="autoOff" name="RadioGroup3" type="radio"  checked="checked" />
+        / <label for="selfOn">半自動</label>
+        <input id="selfOn" name="RadioGroup3" type="radio" />
+        / <label for="autoOn">On</label>
         <input id="autoOn" name="RadioGroup3" type="radio" />)
         <button id="mapClear">Mapクリア</button>
-        <a href="mapLink.html" target="_blank">軌跡一覧表示ページ</a><br />
+        <br />
         Android:<span id="Astat"></span>
+        <a href="mapLink.html" target="_blank">軌跡一覧表示ページ</a>
         <table>
             <tr>
                 <td style="vertical-align: top;">
