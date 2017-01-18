@@ -166,7 +166,7 @@ function initialize() {
         pMouse.y = 120;
         padDraw();
     }, false);
-    
+
     //サーボPWMの制御幅で角度コントロール
     //http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
     //パルス幅　800us〜1500usでー90～0度、1500us~2300usで0〜90度の角度設定．
@@ -354,7 +354,7 @@ function initialize() {
     //テスト http://qiita.com/shizuma/items/d561f37f864c3ebb5096 jQuery 便利なonを使おう（on click)
     //$('#deBug').click(getSnap);
     //debug カクチュウ　35.764267, 137.954661
-    $('#deBug').click(function(){
+    $('#deBug').click(function () {
         readJData('{"no":"DeBug","lat":35.764267,"lng":137.954661,"alti":700,"btr":"BAT:0.0"}');
     });
 }
@@ -385,7 +385,7 @@ var rPos = null; //ローバー表示ポジ
 var lastrPos = null;
 var subPos = null;
 var lastSubPos = null;
-var jData;
+var jData = null;
 var sumRoll = 0;
 var rollCount = 0;
 
@@ -549,10 +549,12 @@ function readJData(res) {
             var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
             var rJson = JSON.stringify(jData);
             //記録用GDフォルダ作製
-            if (saveDirID === 0) {
-                gMkdir(jData.time, url, rJson);
-            } else {
-                saveJpegM(jData.time + ".jpg", url, rJson);
+            if (jData !== null) {
+                if (saveDirID === 0) {
+                    gMkdir(jData.time, url, rJson);
+                } else {
+                    saveJpegM(jData.time + ".jpg", url, rJson);
+                }
             }
         }
     }
@@ -669,6 +671,7 @@ function setBtTextArea(str) {
     $("#btMessages").scrollTop();
 }
 //青アイコン位置決定
+var rMarkerArray = [];
 function checkedInfoWin() {
     checkInfoWin.close();
     sDragend = false;
@@ -678,10 +681,18 @@ function checkedInfoWin() {
 }
 var rMarkerArray = [];
 function rPathDraw(pos) {
+    //位置設定アイコンを移動。
+    if (!sDragend) {
+        sMarker.setPosition(pos);
+    }
+    if (jData === null) {
+        return;
+    }
     var rPath = rPoly.getPath();
     //GoogleMAP上の高度
     //gElevation(rPos);
     rPath.push(pos);
+
     var rMarker = new google.maps.Marker({
         position: pos,
         icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
@@ -707,10 +718,6 @@ function rPathDraw(pos) {
     attachMessage(rMarker, infoWinMsg);
     rPoly.setMap(null);
     rPoly.setMap(map);
-    //位置設定アイコンを移動。
-    if (!sDragend) {
-        sMarker.setPosition(pos);
-    }
 }
 
 //ローバーアイコンのWindow
@@ -739,38 +746,6 @@ function attachMessage(marker, msg) {
     });
 }
 
-//現在地の地図の高度を表示
-function gElevation(pos) {
-// Add a listener for the click event
-//google.maps.event.addListener(map, 'click', addLatLng);
-//GoogleMap高度を調査。GPS高度と比べて見る
-//https://developers.google.com/maps/documentation/javascript/examples/elevation-simple
-//http://www.nanchatte.com/map/getElevationForLocation.html
-//GPS/地図の高度データが信用ならない理由 http://www.sc-runner.com/2013/07/why-gps-altitude-not-accurate.html
-//What vertical datum is used in Google Earth https://productforums.google.com/forum/#!topic/maps/FZkvHCNri0M　(海水面高度か？）
-// ElevationServiceのコンストラクタ
-    var elevation = new google.maps.ElevationService();
-    // リクエストを発行  locations: 要素が１つでも配列に…。
-    elevation.getElevationForLocations({locations: [pos]}, function (results, status) {
-        if (status === google.maps.ElevationStatus.OK) {
-            if (results[0].elevation) {
-                // 標高ゲット！
-                var gElev = results[0].elevation;
-                setBtTextArea('GoogleMAPの高度:' + Math.round(gElev) + 'm');
-            }
-        } else if (status === google.maps.ElevationStatus.INVALID_REQUEST) {
-            alert("リクエストに問題アリ！requestで渡している内容を確認せよ！！");
-        } else if (status === google.maps.ElevationStatus.OVER_QUERY_LIMIT) {
-            alert("短時間にクエリを送りすぎ！落ち着いて！！");
-        } else if (status === google.maps.ElevationStatus.REQUEST_DENIED) {
-            alert("このページでは ElevationResult の利用が許可されていない！・・・なぜ！？");
-        } else if (status === google.maps.ElevationStatus.UNKNOWN_ERROR) {
-            alert("原因不明のなんらかのトラブルが発生した模様。");
-        } else {
-            alert("えぇ～っと・・、バージョンアップ？");
-        }
-    });
-}
 //SkyWayに関するドキュメントとサンプルアプリ
 //https://nttcom.github.io/skyway/documentation.html
 // SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
@@ -1023,44 +998,6 @@ function saveJpegM(name, url, data) {
     });
 }
 
-function getSnap() {
-    var videoWidth = video.get(0).videoWidth;
-    var videoHeight = video.get(0).videoHeight;
-    console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
-    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-    $('#tmp-canvas').attr("width", videoWidth);
-    $('#tmp-canvas').attr("height", videoHeight);
-    //http://www.html5.jp/tag/elements/video.html
-    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-    var tmpCanvas = $('#tmp-canvas').get(0);
-    var tmpCtx = tmpCanvas.getContext("2d");
-    tmpCtx.drawImage(video.get(0), 0, 0);
-    var img = new Image();
-    // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-    img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
-    // 日時からGD画像保存フォルダを作成 new Date().toISOString()
-    if (saveDirID === 0) {
-        gMkdir(new Date().getTime(), img.src, $("#JSON").text());
-    } else {
-        saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
-    }
-    //mapLink("test", "disTest");
-    img.onload = function () {
-        img.width = videoWidth / 2;
-        img.height = videoHeight / 2;
-        //縦長なら回転 
-        //if (videoWidth < videoHeight) {
-        //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
-        //↑表示Canvasは回転するがキャプチャIMGは回転しない
-        //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
-        //$(img).css("-webkit-transform", "rotate(270deg)");
-        //console.log("rotate.");
-        //}
-        //console.log("img.width:hight = " + img.width + " : " + img.height);
-        $('#snap-area').append(img);
-    };
-}
-
 function peerStart(destPeerId) {
     //peer接続されていたら無効
     if (helloAndroid) {
@@ -1214,4 +1151,74 @@ function  padDraw() {
     //JavaScriptで指定した数の小数も表示する http://d.hatena.ne.jp/necoyama3/20090904/1252074054
     //$("#mXY").html(parseFloat(pMouse.x).toFixed(1) + ", " + parseFloat(pMouse.y).toFixed(1));
     $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y));// + "/" + mStr);
+}
+//未使用//現在地の地図の高度を表示
+function gElevation(pos) {
+// Add a listener for the click event
+//google.maps.event.addListener(map, 'click', addLatLng);
+//GoogleMap高度を調査。GPS高度と比べて見る
+//https://developers.google.com/maps/documentation/javascript/examples/elevation-simple
+//http://www.nanchatte.com/map/getElevationForLocation.html
+//GPS/地図の高度データが信用ならない理由 http://www.sc-runner.com/2013/07/why-gps-altitude-not-accurate.html
+//What vertical datum is used in Google Earth https://productforums.google.com/forum/#!topic/maps/FZkvHCNri0M　(海水面高度か？）
+// ElevationServiceのコンストラクタ
+    var elevation = new google.maps.ElevationService();
+    // リクエストを発行  locations: 要素が１つでも配列に…。
+    elevation.getElevationForLocations({locations: [pos]}, function (results, status) {
+        if (status === google.maps.ElevationStatus.OK) {
+            if (results[0].elevation) {
+                // 標高ゲット！
+                var gElev = results[0].elevation;
+                setBtTextArea('GoogleMAPの高度:' + Math.round(gElev) + 'm');
+            }
+        } else if (status === google.maps.ElevationStatus.INVALID_REQUEST) {
+            alert("リクエストに問題アリ！requestで渡している内容を確認せよ！！");
+        } else if (status === google.maps.ElevationStatus.OVER_QUERY_LIMIT) {
+            alert("短時間にクエリを送りすぎ！落ち着いて！！");
+        } else if (status === google.maps.ElevationStatus.REQUEST_DENIED) {
+            alert("このページでは ElevationResult の利用が許可されていない！・・・なぜ！？");
+        } else if (status === google.maps.ElevationStatus.UNKNOWN_ERROR) {
+            alert("原因不明のなんらかのトラブルが発生した模様。");
+        } else {
+            alert("えぇ～っと・・、バージョンアップ？");
+        }
+    });
+}
+//未使用/
+function getSnap() {
+    var videoWidth = video.get(0).videoWidth;
+    var videoHeight = video.get(0).videoHeight;
+    console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
+    //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+    $('#tmp-canvas').attr("width", videoWidth);
+    $('#tmp-canvas').attr("height", videoHeight);
+    //http://www.html5.jp/tag/elements/video.html
+    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+    var tmpCanvas = $('#tmp-canvas').get(0);
+    var tmpCtx = tmpCanvas.getContext("2d");
+    tmpCtx.drawImage(video.get(0), 0, 0);
+    var img = new Image();
+    // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+    img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
+    // 日時からGD画像保存フォルダを作成 new Date().toISOString()
+    if (saveDirID === 0) {
+        gMkdir(new Date().getTime(), img.src, $("#JSON").text());
+    } else {
+        saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
+    }
+    //mapLink("test", "disTest");
+    img.onload = function () {
+        img.width = videoWidth / 2;
+        img.height = videoHeight / 2;
+        //縦長なら回転 
+        //if (videoWidth < videoHeight) {
+        //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
+        //↑表示Canvasは回転するがキャプチャIMGは回転しない
+        //DOM エレメント->jQuery オブジェクト http://please-sleep.cou929.nu/jquery-object-dom-element.html
+        //$(img).css("-webkit-transform", "rotate(270deg)");
+        //console.log("rotate.");
+        //}
+        //console.log("img.width:hight = " + img.width + " : " + img.height);
+        $('#snap-area').append(img);
+    };
 }
