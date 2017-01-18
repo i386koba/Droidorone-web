@@ -19,7 +19,7 @@
         <!--<video id="android-video" autoplay></video> style="position: absolute; top: 50px; left: 50px; z-index: 5;"
          Andoid 画面消灯時にカメラが回転するのに対応して320X320　の正方形にする。 -->
         <!-- HTML5 canvasを重ねる http://www.happytrap.jp/blogs/2012/04/15/8835/     <div style="position: relative;"> -->
-        <video id="android-video" style="height: 320px; width: 320px; position: absolute; top: 40px; left: 0px; z-index: 2;" autoplay></video>
+        <video id="android-video" poster="firstframe.jpg" style="height: 320px; width: 320px; position: absolute; top: 40px; left: 0px; z-index: 2;" autoplay></video>
         <pre id="orient" style="position: absolute; top: 360px; left: 0px; z-index: 3;"></pre> 
         <canvas id="mouseCanvas" width="240" height="240" style="position: absolute; left: 800px; top: 130px; z-index: 4; border:1px solid #CCC;"></canvas>
         <canvas id="padCanvas" width="240" height="240" style="position: absolute; left: 800px; top: 130px; z-index: 5;"></canvas>
@@ -98,7 +98,7 @@
         <div id="droidroneStat">受信待ち.ページがズームしているとMapが正常に表示されないことがあります</div>
         <br />
 	JSON:<span id="JSON"></span>
-        <p><button id="snapshot-btn">snapshot</button></p>
+        <p><button id="deBug">Debug</button></p>
         <p>snap-area:</p>
         <div id="snap-area"></div>
         <canvas id="tmp-canvas"></canvas>
