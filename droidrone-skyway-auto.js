@@ -67,6 +67,38 @@ function initialize() {
         navigator.geolocation.getCurrentPosition(function (position) {
             // success callback
             gPos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            map.setCenter(gPos);
+            //現在位置指定マーカー　青丸
+            sMarker = new google.maps.Marker({
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 3,
+                    strokeColor: '#0000FF'
+                },
+                draggable: true, // ドラッグ可能にする
+                map: map,
+                position: gPos,
+                zIndex: 3// 重gりの優先値(z-index)
+            });
+            //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
+            initInfoWin = new google.maps.InfoWindow({
+                content: '青丸アイコンを現在地にドラッグしてください。'
+            });
+            initInfoWin.open(map, sMarker);
+
+    ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
+    // マーカーのドロップ（ドラッグ終了）時のイベント
+    google.maps.event.addListener(sMarker, 'dragend', function (ev) {
+        sDragend = true;
+        // イベントの引数evの、プロパティ.latLngが緯度経度。
+        sPos = ev.latLng;
+        initInfoWin.close();
+        checkInfoWin.open(map, sMarker);
+        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
+        google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
+            sDragend = false;
+        });
+    });
         }, function (error) {
             // error callback
             switch (error.code) {
@@ -100,37 +132,7 @@ function initialize() {
             sPoly.setMap(map);
         }
     });
-    //現在位置指定マーカー　青丸
-    sMarker = new google.maps.Marker({
-        icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 3,
-            strokeColor: '#0000FF'
-        },
-        draggable: true, // ドラッグ可能にする
-        map: map,
-        position: gPos,
-        zIndex: 3// 重gりの優先値(z-index)
-    });
-    //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
-    initInfoWin = new google.maps.InfoWindow({
-        content: '青丸アイコンを現在地にドラッグしてください。'
-    });
-    initInfoWin.open(map, sMarker);
 
-    ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
-    // マーカーのドロップ（ドラッグ終了）時のイベント
-    google.maps.event.addListener(sMarker, 'dragend', function (ev) {
-        sDragend = true;
-        // イベントの引数evの、プロパティ.latLngが緯度経度。
-        sPos = ev.latLng;
-        initInfoWin.close();
-        checkInfoWin.open(map, sMarker);
-        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
-        google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
-            sDragend = false;
-        });
-    });
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
