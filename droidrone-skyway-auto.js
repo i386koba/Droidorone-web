@@ -1,7 +1,7 @@
 //NetBeans でコード内の TODO を一覧表示させる http://wp.tekapo.com/2012/12/29/how-to-show-todo-list-in-netbeans/
 //http://qiita.com/kazu56/items/36b025dac5802b76715c 【jQuery】フォーム部品の取得・設定まとめ
 //テストページ
-//http://i386koba.github.io/Droidrone-SkyWay/
+//https://i386koba.github.io/Droidorone-web/
 //
 var map;
 var gPos = null; //GPSポジ
@@ -59,11 +59,30 @@ function initialize() {
         strokeWeight: 1,
         zIndex: 1// 重なりの優先値(z-index)
     });
-
+    //初回地図定義 （ブラウザの位置情報が取得できない場合）サーリューション35.8401073,137.9581047
+    gPos = new google.maps.LatLng(35.8401073, 137.9581047);
     //TODO: Geolocation API の使用が　安全なサイトに制限、SSL導入しなければならない、
     //http://netbeans-org.1045718.n5.nabble.com/How-to-debug-https-or-SSL-web-applications-in-netbeans-td2885406.html
-    //初回地図定義 サーリューション35.8401073,137.9581047
-    gPos = new google.maps.LatLng(35.8401073, 137.9581047);
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+            // success callback
+            gPos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+        }, function (error) {
+            // error callback
+            switch (error.code) {
+                case 1:
+                    $("#orient").html("ブラウザの位置情報の利用が許可されていません");
+                    break;
+                case 2:
+                    $("#orient").html( "ブラウザの位置情報が判定できません");
+                    break;
+                case 3:
+                    $("#orient").html( "ブラウザの位置情報がタイムアウトしました");
+                    break;
+            }
+        });
+    }
+    //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
     var mapOptions = {
         zoom: 18,
         center: gPos,
