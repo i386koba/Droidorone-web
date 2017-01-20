@@ -9,7 +9,15 @@ https://i386koba.github.io/Droidorone-web/mapLink.html
 
 から参照できます。
 
-今後の予定:　操縦をリアルタイムで共有したい。
+##Android端末とPeerIDの交換
+
+Androidのアプリ　https://github.com/i386koba/Droidrone　で
+自身のGoogleIDでログインして、GoogleDriveにPeerIDをファイル保存します。
+Web画面は［Authorize GoogleID］ボタンで同じGoogleIDでログインし、GoogleDriveに保存された、
+先ほどのPeerIDを読みに行って、そのPeerIDでAndroiｄと接続します。
+
+
+##今後の予定:　操縦をリアルタイムで共有したい。
 
 https://github.com/nttcom/SkyWay-MultiParty-Android
 
