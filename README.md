@@ -13,12 +13,15 @@ https://i386koba.github.io/Droidorone-web/mapLink.html
 
 Androidのアプリ
 https://github.com/i386koba/Droidrone
-　は、自身のGoogleIDでログインし、GoogleDriveにPeerIDをファイル保存します。
+　は、自身のGoogleIDでログインし、GoogleDriveにデータコネクション待ちのPeerIDをファイル保存します。
 
 Web画面は［Authorize GoogleID］ボタンで、Androidと同じGoogleIDでログインし、
-AndroidによってGoogleDriveに保存されたPeerIDを読みに行って、そのPeerIDでAndroiｄと接続します。
+AndroidによってGoogleDriveに保存されたPeerIDを読みに行って、
+そのPeerIDでAndroiｄのPeer　データコネクションに接続しにいきます。
 
-
+~~Androidは先のデータコネクションを使いメディアコネクションのPeerIDを送信し、
+Web画面がメディア接続します。~~
+（一つのPeerIDでデータもメディアもコネクションできるの知りませんでした。）
 ##今後の予定:　操縦をリアルタイムで共有したい。
 
 https://github.com/nttcom/SkyWay-MultiParty-Android
