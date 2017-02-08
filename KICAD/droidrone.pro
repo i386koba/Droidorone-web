@@ -1,4 +1,4 @@
-update=2017/01/25 12:55:37
+update=2017/02/08 14:37:43
 version=1
 last_client=kicad
 [general]
@@ -71,3 +71,4 @@ LibName27=opto
 LibName28=atmel
 LibName29=contrib
 LibName30=valves
+LibName31=atmega328pb
