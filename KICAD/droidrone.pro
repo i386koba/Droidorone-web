@@ -1,10 +1,6 @@
-update=2017/02/08 14:37:43
+update=2017/02/13 11:13:26
 version=1
 last_client=kicad
-[general]
-version=1
-RootSch=
-BoardNm=
 [pcbnew]
 version=1
 LastNetListRead=
@@ -24,9 +20,6 @@ SolderMaskMinWidth=0.000000000000
 DrawSegmentWidth=0.200000000000
 BoardOutlineThickness=0.100000000000
 ModuleOutlineThickness=0.150000000000
-[cvpcb]
-version=1
-NetIExt=net
 [schematic_editor]
 version=1
 PageLayoutDescrFile=
@@ -72,3 +65,8 @@ LibName28=atmel
 LibName29=contrib
 LibName30=valves
 LibName31=atmega328pb
+[general]
+version=1
+[cvpcb]
+version=1
+NetIExt=net
