@@ -1,9 +1,9 @@
-(kicad_pcb (version 4) (host pcbnew 4.0.2-stable)
+(kicad_pcb (version 4) (host pcbnew 4.0.1-stable)
 
   (general
     (links 175)
     (no_connects 175)
-    (area 124.924999 24.924999 225.075001 75.075001)
+    (area 90.000001 13.815 243 96.065)
     (thickness 1.6)
     (drawings 10)
     (tracks 0)
@@ -1190,7 +1190,7 @@
   )
 
   (module Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm (layer F.Cu) (tedit 5862ED52) (tstamp 589AC799)
-    (at 127.5 67.5)
+    (at 145 35)
     (descr "Through hole straight pin header, 1x03, 2.54mm pitch, single row")
     (tags "Through hole pin header THT 1x03 2.54mm single row")
     (path /5808D7B4)
@@ -1228,7 +1228,7 @@
   )
 
   (module Pin_Headers:Pin_Header_Straight_1x03_Pitch2.54mm (layer F.Cu) (tedit 5862ED52) (tstamp 589AC7A0)
-    (at 132.5 67.5)
+    (at 157.5 35)
     (descr "Through hole straight pin header, 1x03, 2.54mm pitch, single row")
     (tags "Through hole pin header THT 1x03 2.54mm single row")
     (path /5808D651)
