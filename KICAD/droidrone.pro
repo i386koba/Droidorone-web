@@ -1,4 +1,4 @@
-update=2017/02/13 15:42:04
+update=2017/02/17 8:53:30
 version=1
 last_client=kicad
 [pcbnew]
@@ -39,8 +39,8 @@ NetIExt=net
 version=1
 LibDir=lib;lib.pretty
 [eeschema/libraries]
-LibName1=w_rtx
-LibName2=droidrone-rescue
+LibName1=droidrone-rescue
+LibName2=w_rtx
 LibName3=power
 LibName4=device
 LibName5=transistors
@@ -71,3 +71,4 @@ LibName29=atmel
 LibName30=contrib
 LibName31=valves
 LibName32=atmega328pb
+LibName33=droidrone-cache
