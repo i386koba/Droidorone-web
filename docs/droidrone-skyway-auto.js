@@ -11,6 +11,9 @@ var subPoly;
 var sMarker = null;
 var sPos = null; //現在地　設定ポジ
 var sDragend = false;
+var wPos = null; //ホイル回転推定ポジ
+var gpsAccCircle;
+var setFinCircle;
 var gamePadID;
 var gamePadInterval;
 var pCanvas = null;  //マウスパッド　キャンバス
@@ -67,38 +70,6 @@ function initialize() {
         navigator.geolocation.getCurrentPosition(function (position) {
             // success callback
             gPos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-            map.setCenter(gPos);
-            //現在位置指定マーカー　青丸
-            sMarker = new google.maps.Marker({
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 3,
-                    strokeColor: '#0000FF'
-                },
-                draggable: true, // ドラッグ可能にする
-                map: map,
-                position: gPos,
-                zIndex: 3// 重gりの優先値(z-index)
-            });
-            //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
-            initInfoWin = new google.maps.InfoWindow({
-                content: '青丸アイコンを現在地にドラッグしてください。'
-            });
-            initInfoWin.open(map, sMarker);
-
-    ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
-    // マーカーのドロップ（ドラッグ終了）時のイベント
-    google.maps.event.addListener(sMarker, 'dragend', function (ev) {
-        sDragend = true;
-        // イベントの引数evの、プロパティ.latLngが緯度経度。
-        sPos = ev.latLng;
-        initInfoWin.close();
-        checkInfoWin.open(map, sMarker);
-        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
-        google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
-            sDragend = false;
-        });
-    });
         }, function (error) {
             // error callback
             switch (error.code) {
@@ -106,10 +77,10 @@ function initialize() {
                     $("#orient").html("ブラウザの位置情報の利用が許可されていません");
                     break;
                 case 2:
-                    $("#orient").html( "ブラウザの位置情報が判定できません");
+                    $("#orient").html("ブラウザの位置情報が判定できません");
                     break;
                 case 3:
-                    $("#orient").html( "ブラウザの位置情報がタイムアウトしました");
+                    $("#orient").html("ブラウザの位置情報がタイムアウトしました");
                     break;
             }
         });
@@ -123,6 +94,39 @@ function initialize() {
         noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
     };
     map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+    map.setCenter(gPos);
+    //現在位置指定マーカー　青丸
+    sMarker = new google.maps.Marker({
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 3,
+            strokeColor: '#0000FF'
+        },
+        draggable: true, // ドラッグ可能にする
+        map: map,
+        position: gPos,
+        zIndex: 3// 重gりの優先値(z-index)
+    });
+    //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
+    initInfoWin = new google.maps.InfoWindow({
+        content: '青丸アイコンを現在地にドラッグしてください。'
+    });
+    initInfoWin.open(map, sMarker);
+
+    ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
+    // マーカーのドロップ（ドラッグ終了）時のイベント
+    google.maps.event.addListener(sMarker, 'dragend', function (ev) {
+        sDragend = true;
+        // イベントの引数evの、プロパティ.latLngが緯度経度。
+        sPos = ev.latLng;
+        wPos = sPos;
+        initInfoWin.close();
+        checkInfoWin.open(map, sMarker);
+        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
+        google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
+            sDragend = false;
+        });
+    });
     //自動運転移動場所設定　PATH
     google.maps.event.addListener(map, 'click', function (ev) {
         if (!sDragend && !$('#autoOff').prop('checked')) {
@@ -134,6 +138,29 @@ function initialize() {
     });
 
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
+    //https://developers.google.com/maps/documentation/javascript/reference#Circle
+    gpsAccCircle = new google.maps.Circle({
+        fillColor: '#ff0000', // 塗りつぶし色
+        fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
+        strokeColor: '#ff0000', // 外周色
+        strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
+        strokeWeight: 1, // 外周太さ（ピクセル）
+        zIndex: 1 //
+    });
+    gpsAccCircle.setCenter(gPos);
+    // 中心点(google.maps.LatLng)
+    gpsAccCircle.setRadius(100);
+    gpsAccCircle.setMap(map);
+
+    setFinCircle = new google.maps.Circle({
+        fillColor: '#00ff00', // 塗りつぶし色 緑
+        fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
+        strokeColor: '#00ff00', // 外周色
+        strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
+        strokeWeight: 1, // 外周太さ（ピクセル）
+        zIndex: 1 //
+    });
+
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
     //pCanvas = document.getElementById("padCanvas");  
@@ -376,32 +403,13 @@ function initialize() {
     //$('#deBug').click(getSnap);
     //debug カクチュウ　35.764267, 137.954661
     $('#deBug').click(function () {
-        readJData('{"no":"DeBug","lat":35.764267,"lng":137.954661,"alti":700,"btr":"BAT:0.0"}');
+        readJData("{'no':'DeBug','lat':35.764267,'lng':137.954661,'alti':700,'accuracy':10,'btr':'BAT:0.0'}");
     });
 }
 
 var lastBtR = "";
-//https://developers.google.com/maps/documentation/javascript/reference#Circle
-var gpsAccCircle = new google.maps.Circle({
-    fillColor: '#ff0000', // 塗りつぶし色
-    fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
-    strokeColor: '#ff0000', // 外周色
-    strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
-    strokeWeight: 1, // 外周太さ（ピクセル）
-    zIndex: 1 //
-});
 var gpsAccCount = 0;
-var setFinCircle = new google.maps.Circle({
-    fillColor: '#00ff00', // 塗りつぶし色 緑
-    fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
-    strokeColor: '#00ff00', // 外周色
-    strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
-    strokeWeight: 1, // 外周太さ（ピクセル）
-    zIndex: 1 //
-});
-
 var roverMarker = null;
-var wPos = null; //ホイル回転推定ポジ
 var rPos = null; //ローバー表示ポジ 
 var lastrPos = null;
 var subPos = null;
@@ -440,8 +448,9 @@ function readJData(res) {
     //Chromeデベロッパー・ツールの機能 http://www.buildinsider.net/web/chromedevtools/01#page-9
     //jData.rota 0-180と0~-180 -> 0-360変更済み
     //現在位置
-    $('#droidroneStat').html("No.: " + jData.no + ", GPS lat:" + jData.lat
-            + ", lag: " + jData.lng
+    $('#droidroneStat').html("No.: " + jData.no
+            + ", GPS lat:" + jData.lat
+            + ", lng: " + jData.lng
             + ", 高度: " + jData.alti + 'm'
             + ', 誤差: ' + jData.accuracy + 'm'
             + ', pitch: ' + jData.pitch + '°'
@@ -495,87 +504,89 @@ function readJData(res) {
             }
             wPos = google.maps.geometry.spherical.computeOffset(wPos, dis, avgRoll);
         }
-        //GPS受信できない場合
-        if (jData.lat === 'NoData') {
-            $("#orient").html("GPSが受信できません");
-        } else {
-            gPos = new google.maps.LatLng(jData.lat, jData.lng);
-            //前回GPS精度円を除去
-            gpsAccCircle.setMap(null);
-            //if (gpsAccCount++ > 10) {
-            //gpsAccCount = 0;
+    }
+    //GPS受信できない場合
+    if (jData.lat === 'NoData') {
+        $("#orient").html("GPSが受信できません");
+    } else {
+        gPos = new google.maps.LatLng(jData.lat, jData.lng);
+        //前回GPS精度円を除去
+        gpsAccCircle.setMap(null);
+        if (gpsAccCount === 0) {
+            gpsAccCount = 10;
             //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
             gpsAccCircle.setCenter(gPos);
             // 中心点(google.maps.LatLng)
             gpsAccCircle.setRadius(jData.accuracy);
             gpsAccCircle.setMap(map);
         }
+        gpsAccCount--;
+    }
 
-        //GPSによる現在地
-        if ($('#gpsOn').prop('checked')) {
-            rPos = gPos;
-            subPos = wPos;
-        }
+    //GPSによる現在地
+    if ($('#gpsOn').prop('checked')) {
+        rPos = gPos;
+        subPos = wPos;
+    }
 
-        //ホイルセンサーによる現在地
-        if ($('#gpsOff').prop('checked')) {
-            rPos = wPos;
-            subPos = gPos;
-            jData.lat = wPos.lat();
-            jData.lng = wPos.lng();
-        }
-        //マップ中心をローバーアイコンで移動
-        if ($('#MapPanOff').prop('checked')) {
-            map.setCenter(rPos);
-        }
+    //ホイルセンサーによる現在地
+    if ($('#gpsOff').prop('checked')) {
+        rPos = wPos;
+        subPos = gPos;
+    }
 
-        if (roverMarker !== null) {
-            roverMarker.setMap(null);
-        }
-        //ローバーマーカー　赤
-        roverMarker = new google.maps.Marker({
-            position: rPos,
-            icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
-                //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
-                // 矢印中心が先っぽだったのでPath作った。
-                scale: 3,
-                strokeColor: '#FF0000',
-                rotation: jData.rota
-            },
-            map: map,
-            zIndex: 2// 重なりの優先値(z-index)
-        });
-        //距離が5m動いたらパス描画,データ記録
-        //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
-        if (lastrPos === null) {
-            lastrPos = rPos;
-            initInfoWin.open(map, sMarker);
-            sMarker.setPosition(rPos);
-        }
-        var distance = google.maps.geometry.spherical.computeDistanceBetween(rPos, lastrPos);
-        if (distance > 2) {
-            lastrPos = rPos;
-            rPathDraw(rPos);
-            setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
-            //video画面をGD保存
-            //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-            $('#tmp-canvas').attr("width", video.get(0).videoWidth);
-            $('#tmp-canvas').attr("height", video.get(0).videoHeight);
-            //http://www.html5.jp/tag/elements/video.html
-            //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-            var tmpCanvas = $('#tmp-canvas').get(0);
-            var tmpCtx = tmpCanvas.getContext("2d");
-            tmpCtx.drawImage(video.get(0), 0, 0);
-            //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-            var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
-            var rJson = JSON.stringify(jData);
-            //記録用GDフォルダ作製
-            if (jData !== null) {
-                if (saveDirID === 0) {
-                    gMkdir(jData.time, url, rJson);
-                } else {
-                    saveJpegM(jData.time + ".jpg", url, rJson);
-                }
+    //マップ中心をローバーアイコンで移動
+    if ($('#MapPanOff').prop('checked')) {
+        map.setCenter(rPos);
+    }
+
+    if (roverMarker !== null) {
+        roverMarker.setMap(null);
+    }
+    //ローバーマーカー　赤
+    roverMarker = new google.maps.Marker({
+        position: rPos,
+        icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
+            //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
+            // 矢印中心が先っぽだったのでPath作った。
+            scale: 3,
+            strokeColor: '#FF0000',
+            rotation: jData.rota
+        },
+        map: map,
+        zIndex: 2// 重なりの優先値(z-index)
+    });
+
+    if (lastrPos === null) {
+        lastrPos = rPos;
+        initInfoWin.open(map, sMarker);
+        sMarker.setPosition(rPos);
+    }
+    //距離が5m動いたらパス描画,データ記録
+    //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
+    var distance = google.maps.geometry.spherical.computeDistanceBetween(rPos, lastrPos);
+    if (distance > 2) {
+        lastrPos = rPos;
+        rPathDraw(rPos);
+        setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
+        //video画面をGD保存
+        //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+        $('#tmp-canvas').attr("width", video.get(0).videoWidth);
+        $('#tmp-canvas').attr("height", video.get(0).videoHeight);
+        //http://www.html5.jp/tag/elements/video.html
+        //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+        var tmpCanvas = $('#tmp-canvas').get(0);
+        var tmpCtx = tmpCanvas.getContext("2d");
+        tmpCtx.drawImage(video.get(0), 0, 0);
+        //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+        var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
+        var rJson = JSON.stringify(jData);
+        //記録用GDフォルダ作製
+        if (jData !== null) {
+            if (saveDirID === 0) {
+                gMkdir(jData.time, url, rJson);
+            } else {
+                saveJpegM(jData.time + ".jpg", url, rJson);
             }
         }
     }

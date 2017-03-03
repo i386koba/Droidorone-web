@@ -1,14 +1,14 @@
-(kicad_pcb (version 4) (host pcbnew 4.0.5)
+(kicad_pcb (version 4) (host pcbnew 4.0.2-stable)
 
   (general
     (links 175)
     (no_connects 1)
-    (area 90.150001 14.3 226.620001 76.545)
+    (area 90.000001 14.15 226.620001 76.445)
     (thickness 1.6)
-    (drawings 70)
+    (drawings 24)
     (tracks 592)
     (zones 0)
-    (modules 72)
+    (modules 103)
     (nets 125)
   )
 
@@ -18,8 +18,8 @@
     (31 B.Cu signal)
     (32 B.Adhes user)
     (33 F.Adhes user)
-    (34 B.Paste user)
-    (35 F.Paste user)
+    (34 B.Paste user hide)
+    (35 F.Paste user hide)
     (36 B.SilkS user)
     (37 F.SilkS user)
     (38 B.Mask user)
@@ -357,6 +357,396 @@
     (uvia_dia 0.3)
     (uvia_drill 0.1)
     (add_net +6V)
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB877E)
+    (at 224 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8776)
+    (at 221 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8772)
+    (at 218 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB876E)
+    (at 206 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB876A)
+    (at 209 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8766)
+    (at 215 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8762)
+    (at 212 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB875E)
+    (at 200 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB875A)
+    (at 203 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8756)
+    (at 197 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8751)
+    (at 194 53)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB874D)
+    (at 194 53)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8749)
+    (at 194 56)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8745)
+    (at 194 74)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8741)
+    (at 194 71)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB873D)
+    (at 194 65)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8739)
+    (at 194 68)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8735)
+    (at 194 62)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8731)
+    (at 194 59)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB872D)
+    (at 194 59)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8729)
+    (at 194 33)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8725)
+    (at 194 33)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8721)
+    (at 194 36)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB871D)
+    (at 194 42)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8719)
+    (at 194 39)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB870C)
+    (at 194 45)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8707)
+    (at 194 48)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB8703)
+    (at 194 50.5)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB86FE)
+    (at 194 30)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB86FA)
+    (at 194 27)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
   )
 
   (module lib:RN42XV (layer F.Cu) (tedit 581BD985) (tstamp 589AC884)
@@ -3254,52 +3644,19 @@
       (net 41 "Net-(Conn1-Pad1)"))
   )
 
-  (gr_line (start 223.7 51.2) (end 221.5 51.2) (angle 90) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 221.5 49.8) (end 223.7 49.8) (angle 90) (layer Edge.Cuts) (width 0.15))
-  (gr_arc (start 217 50.5) (end 217 51.2) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9DB))
-  (gr_line (start 217 51.2) (end 221.5 51.2) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9DA))
-  (gr_line (start 217 49.8) (end 221.5 49.8) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9D9))
-  (gr_arc (start 223.7 50.5) (end 223.7 49.8) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9D8))
-  (gr_arc (start 214.5 50.5) (end 214.5 49.8) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9C3))
-  (gr_line (start 210 49.8) (end 214.5 49.8) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9C2))
-  (gr_line (start 210 51.2) (end 214.5 51.2) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9C1))
-  (gr_arc (start 210 50.5) (end 210 51.2) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9C0))
-  (gr_arc (start 203 50.5) (end 203 51.2) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9B6))
-  (gr_line (start 203 51.2) (end 207.5 51.2) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9B5))
-  (gr_line (start 203 49.8) (end 207.5 49.8) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9B4))
-  (gr_arc (start 207.5 50.5) (end 207.5 49.8) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B9B3))
-  (gr_arc (start 200.5 50.5) (end 200.5 49.8) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B97C))
-  (gr_line (start 196 49.8) (end 200.5 49.8) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B97B))
-  (gr_line (start 196 51.2) (end 200.5 51.2) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B97A))
-  (gr_arc (start 196 50.5) (end 196 51.2) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B979))
-  (gr_arc (start 194 54.5) (end 193.3 54.5) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D7))
-  (gr_line (start 193.3 54.5) (end 193.3 59) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D6))
-  (gr_line (start 194.7 54.5) (end 194.7 59) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D5))
-  (gr_arc (start 194 59) (end 194.7 59) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D4))
-  (gr_arc (start 194 66) (end 194.7 66) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D3))
-  (gr_line (start 194.7 61.5) (end 194.7 66) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D2))
-  (gr_line (start 193.3 61.5) (end 193.3 66) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D1))
-  (gr_arc (start 194 61.5) (end 193.3 61.5) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3D0))
-  (gr_arc (start 194 73) (end 194.7 73) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3CB))
-  (gr_line (start 194.7 68.5) (end 194.7 73) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3CA))
-  (gr_line (start 193.3 68.5) (end 193.3 73) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3C9))
-  (gr_arc (start 194 68.5) (end 193.3 68.5) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3C8))
-  (gr_arc (start 194 40.5) (end 193.3 40.5) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3BE))
-  (gr_line (start 193.3 40.5) (end 193.3 45) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3BD))
-  (gr_line (start 194.7 40.5) (end 194.7 45) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3BC))
-  (gr_arc (start 194 45) (end 194.7 45) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3BB))
-  (gr_arc (start 194 52) (end 194.7 52) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3BA))
-  (gr_line (start 194.7 47.5) (end 194.7 52) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3B9))
-  (gr_line (start 193.3 47.5) (end 193.3 52) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3B8))
-  (gr_arc (start 194 47.5) (end 193.3 47.5) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3B7))
-  (gr_arc (start 194 33.5) (end 193.3 33.5) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3AD))
-  (gr_line (start 193.3 33.5) (end 193.3 38) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3AC))
-  (gr_line (start 194.7 33.5) (end 194.7 38) (angle 90) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3AB))
-  (gr_arc (start 194 38) (end 194.7 38) (angle 180) (layer Edge.Cuts) (width 0.15) (tstamp 58A6B3AA))
-  (gr_arc (start 194 31) (end 194.7 31) (angle 180) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 194.7 26.5) (end 194.7 31) (angle 90) (layer Edge.Cuts) (width 0.15))
-  (gr_line (start 193.3 26.5) (end 193.3 31) (angle 90) (layer Edge.Cuts) (width 0.15))
-  (gr_arc (start 194 26.5) (end 193.3 26.5) (angle 180) (layer Edge.Cuts) (width 0.15))
+  (module lib:Hole_1.0mm (layer F.Cu) (tedit 58A29F82) (tstamp 58AB86F4)
+    (at 194 27)
+    (descr "Mounting Hole 2.2mm, no annular, M2")
+    (tags "mounting hole 2.2mm no annular m2")
+    (fp_text reference "" (at 2.5 0) (layer F.SilkS) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (fp_text value Hole_1.0mm (at 0 3.2) (layer F.Fab) hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    )
+    (pad "" np_thru_hole circle (at 0 0) (size 1 1) (drill 1) (layers *.Cu *.Mask))
+  )
+
   (gr_text ↓NotPB (at 131.9 62.3) (layer F.SilkS)
     (effects (font (size 1 1) (thickness 0.2) italic))
   )
