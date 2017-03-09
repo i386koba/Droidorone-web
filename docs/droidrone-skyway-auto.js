@@ -31,7 +31,54 @@ var lastCommand = "";
 var video;
 //DOM読み込み完了　初期化
 var google;
+var lastBtR = "";
+var gpsAccCount = 0;
+//var roverMarker = null;
+var rPos = null; //ローバー表示ポジ 
+var lastrPos = null;
+var subPos = null;
+var lastSubPos = null;
+var jData = null;
+var sumRoll = 0;
+var rollCount = 0;
+
+var farstSetPos;
+var farstSetMaker = new google.maps.Marker({});
+var reachInfoWin = new google.maps.InfoWindow({
+    content: '次の移動場所に行くならClose'
+            //'<button onClick="checkedInfoWin()"></button>'
+});
+var reachInfoWinClose = false;
+
+var checkInfoWin = new google.maps.InfoWindow({
+    content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
+});
+
+var hudCanvas = null;  //ヘッドアップ　キャンバス
+var hugg = null;     //ヘッドアップ コンテキスト
+const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
+var oriBar = "W";
+for (var i = 0; i < ori8.length; i++) {
+    oriBar += ("|........|........|" + ori8[i]);
+}
 google.maps.event.addDomListener(window, 'load', initialize);
+
+var gapi;
+var peer;
+var peerdConn = null; // 接続したコネを保存しておく変数
+//2015.06
+var helloAndroid = false;
+var lastAxes;
+var googleName;
+var googleID;
+var skyWayFolderID = "";
+var saveDirID = 0;
+//ローバーアイコンのWindow
+var lastInfoWin = null;
+//青アイコン位置決定
+var rMarkerArray = [];
+var rMarkerArray = [];
+
 function initialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = {
@@ -407,39 +454,9 @@ function initialize() {
     });
 }
 
-var lastBtR = "";
-var gpsAccCount = 0;
-var roverMarker = null;
-var rPos = null; //ローバー表示ポジ 
-var lastrPos = null;
-var subPos = null;
-var lastSubPos = null;
-var jData = null;
-var sumRoll = 0;
-var rollCount = 0;
-
-var farstSetPos;
-var farstSetMaker = new google.maps.Marker({});
-var reachInfoWin = new google.maps.InfoWindow({
-    content: '次の移動場所に行くならClose'
-            //'<button onClick="checkedInfoWin()"></button>'
-});
-var reachInfoWinClose = false;
 google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
     reachInfoWinClose = true;
 });
-//var rInfoWin = new google.maps.InfoWindow();
-var checkInfoWin = new google.maps.InfoWindow({
-    content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
-});
-
-var hudCanvas = null;  //ヘッドアップ　キャンバス
-var hugg = null;     //ヘッドアップ コンテキスト
-var ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
-var oriBar = "W";
-for (var i = 0; i < ori8.length; i++) {
-    oriBar += ("|........|........|" + ori8[i]);
-}
 
 function readJData(res) {
     $("#JSON").html(res);
@@ -702,8 +719,7 @@ function setBtTextArea(str) {
     $("#btMessages").val(str + "\n" + $("#btMessages").val());
     $("#btMessages").scrollTop();
 }
-//青アイコン位置決定
-var rMarkerArray = [];
+
 function checkedInfoWin() {
     checkInfoWin.close();
     sDragend = false;
@@ -711,7 +727,7 @@ function checkedInfoWin() {
     lastrPos = rPos;
     rPathDraw(rPos);
 }
-var rMarkerArray = [];
+
 function rPathDraw(pos) {
     //位置設定アイコンを移動。
     if (!sDragend) {
@@ -752,8 +768,6 @@ function rPathDraw(pos) {
     rPoly.setMap(map);
 }
 
-//ローバーアイコンのWindow
-var lastInfoWin = null;
 //ローバー(ドロイドローン)アイコン表示
 function attachMessage(marker, msg) {
     //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
@@ -792,11 +806,6 @@ const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleuser
 const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
 const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
 
-var gapi;
-var peer;
-var peerdConn = null; // 接続したコネを保存しておく変数
-//2015.06
-var helloAndroid = false;
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
     //既存のPeer再接続（Android再起動の場合）
@@ -825,8 +834,6 @@ function handleAuth() {
 //function checkAuth() {
 //    gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(' '), 'immediate': true}, handleAuthResult);
 //}
-var googleName;
-var googleID;
 
 function handleAuthResult(authResult) {
     var authButton = document.getElementById('authorizeButton');
@@ -846,7 +853,6 @@ $(window).on("beforeunload", function () {
     peer.destroy();
 });
 
-var skyWayFolderID = "";
 function loadPeerId() {
     //SkyWayフォルダ検索
     var SKYWAYRC_DIR = "SkyWayRC";
@@ -925,7 +931,7 @@ function loadPeerId() {
 //　GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
 //Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
-var saveDirID = 0;
+
 function gMkdir(name, url, data) {
     var request = gapi.client.drive.files.insert({
         'path': '/upload/drive/v2/files',
@@ -1080,7 +1086,6 @@ function peerStart(destPeerId) {
     });
 }
 
-var lastAxes;
 function gamePadListen() {
     var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
     var gamePad = gamepad_list[gamePadID];
