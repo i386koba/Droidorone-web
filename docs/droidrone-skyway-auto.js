@@ -2,7 +2,6 @@
 //http://qiita.com/kazu56/items/36b025dac5802b76715c 【jQuery】フォーム部品の取得・設定まとめ
 //テストページ
 //https://i386koba.github.io/Droidorone-web/
-//
 var map;
 var gPos = null; //GPSポジ
 var rPoly;
@@ -27,13 +26,11 @@ var xRange = 400;
 var xCenter = 1500;
 var commandStr = "";
 var lastCommand = "";
-//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
 var video;
-//DOM読み込み完了　初期化
 var google;
 var lastBtR = "";
 var gpsAccCount = 0;
-//var roverMarker = null;
+var roverMarker = null;
 var rPos = null; //ローバー表示ポジ 
 var lastrPos = null;
 var subPos = null;
@@ -49,11 +46,9 @@ var reachInfoWin = new google.maps.InfoWindow({
             //'<button onClick="checkedInfoWin()"></button>'
 });
 var reachInfoWinClose = false;
-
 var checkInfoWin = new google.maps.InfoWindow({
     content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
 });
-
 var hudCanvas = null;  //ヘッドアップ　キャンバス
 var hugg = null;     //ヘッドアップ コンテキスト
 const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
@@ -62,7 +57,6 @@ for (var i = 0; i < ori8.length; i++) {
     oriBar += ("|........|........|" + ori8[i]);
 }
 google.maps.event.addDomListener(window, 'load', initialize);
-
 var gapi;
 var peer;
 var peerdConn = null; // 接続したコネを保存しておく変数
@@ -78,6 +72,24 @@ var lastInfoWin = null;
 //青アイコン位置決定
 var rMarkerArray = [];
 var rMarkerArray = [];
+//SkyWayに関するドキュメントとサンプルアプリ
+//https://nttcom.github.io/skyway/documentation.html
+// SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
+const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
+//Drive REST API JavaScript Quickstart
+//https://developers.google.com/drive/v2/web/quickstart/js
+// Your Client ID can be retrieved from your project in the Google
+// Developer Console, https://console.developers.google.com
+const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
+//google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
+//OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
+const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
+const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
+
+const boundary = '-------314159265358979323846';
+const delimiter = "\r\n--" + boundary + "\r\n";
+const close_delim = "\r\n--" + boundary + "--";
+
 
 function initialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
@@ -697,8 +709,8 @@ function readJData(res) {
         }
     }
 
-    //Videoの向きを判断して回転 
-    //2016.11.15 Android縦専用にした。
+//Videoの向きを判断して回転 
+//2016.11.15 Android縦専用にした。
 //    if (vRotate === 0 && video.get(0).videoHeight > video.get(0).videoWidth ){
 //        video.css("-webkit-transform", "rotate(270deg)");
 //        vRotate = 270;
@@ -768,7 +780,6 @@ function rPathDraw(pos) {
     rPoly.setMap(map);
 }
 
-//ローバー(ドロイドローン)アイコン表示
 function attachMessage(marker, msg) {
     //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
     var infoWin = new google.maps.InfoWindow({
@@ -791,20 +802,6 @@ function attachMessage(marker, msg) {
         infoWin.close();
     });
 }
-
-//SkyWayに関するドキュメントとサンプルアプリ
-//https://nttcom.github.io/skyway/documentation.html
-// SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
-const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
-//Drive REST API JavaScript Quickstart
-//https://developers.google.com/drive/v2/web/quickstart/js
-// Your Client ID can be retrieved from your project in the Google
-// Developer Console, https://console.developers.google.com
-const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
-//google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
-//OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
-const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
-const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
 
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
@@ -830,6 +827,7 @@ function handleAuth() {
     gapi.auth.authorize({client_id: CLIENT_ID, scope: SCOPES.join(" "), immediate: false}, handleAuthResult);
     return false;
 }
+
 //Check if current user has authorized this application.
 //function checkAuth() {
 //    gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(' '), 'immediate': true}, handleAuthResult);
@@ -847,7 +845,6 @@ function handleAuthResult(authResult) {
         };
     }
 }
-
 //終了時
 $(window).on("beforeunload", function () {
     peer.destroy();
@@ -925,13 +922,13 @@ function loadPeerId() {
         googleID = resp.id;
     });
 }
+
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
 //skyWayFolderIDの下に読み込み共有の経路ファイル、写真用のTime番号のフォルダ作る。
 //GoogleDrive経路一覧共通ファイルに上記フォルダIDを追加。
 //　GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
 //Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
-
 function gMkdir(name, url, data) {
     var request = gapi.client.drive.files.insert({
         'path': '/upload/drive/v2/files',
@@ -982,6 +979,8 @@ function gMkdir(name, url, data) {
         });
     });
 }
+
+//HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
 //GDアップロードにはSimple、マルチパートがある。
 //Simple upload https://developers.google.com/drive/v2/web/manage-uploads#simple
 //うまくいかなかった。gapi.client.drive.files.insertはフォルダ以外のアップロードはJavascriptで使えない模様。
@@ -990,20 +989,9 @@ function gMkdir(name, url, data) {
 //よって、ファイル名を指定したいシンプルアップロードアップデートは無理な模様。
 //application/vnd.google-apps.photo でインサートできるか？
 //drive v2 でファイルupload http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
-
 //いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
 //JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
 //Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c  
-/**
- * Insert new file.
- *
- * @param {File} fileData File object to read data from.
- * @param {Function} callback Function to call when the request is complete.
- */
-const boundary = '-------314159265358979323846';
-const delimiter = "\r\n--" + boundary + "\r\n";
-const close_delim = "\r\n--" + boundary + "--";
-
 function saveJpegM(name, url, data) {
     var contentType = 'image/jpeg'; // 'application/octet-stream';
     var metadata = {
@@ -1130,6 +1118,7 @@ function gamePadListen() {
      str += "value:" + button.value + " }\n";
      } */
 }
+
 //マウスによるPAD操作の描画
 function  padDraw() {
     // クリア
@@ -1189,6 +1178,7 @@ function  padDraw() {
     //$("#mXY").html(parseFloat(pMouse.x).toFixed(1) + ", " + parseFloat(pMouse.y).toFixed(1));
     $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y));// + "/" + mStr);
 }
+
 //未使用//現在地の地図の高度を表示
 function gElevation(pos) {
 // Add a listener for the click event
@@ -1221,6 +1211,7 @@ function gElevation(pos) {
         }
     });
 }
+
 //未使用/
 function getSnap() {
     var videoWidth = video.get(0).videoWidth;
