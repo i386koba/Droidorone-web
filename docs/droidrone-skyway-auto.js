@@ -635,78 +635,8 @@ function readJData(res) {
         subPoly.setMap(map);
     }
     //TODO: 自動操縦 (将来的にはAndroidで、）
-    var setDis = 1.0; //自動運転停止、設定位置までの距離
     if (!$('#autoOff').prop('checked')) {
-        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
-        var sPath = sPoly.getPath();
-        var num = sPath.getLength();
-        if (num > 0) {
-            farstSetPos = sPath.getAt(0);
-            farstSetMaker.setMap(null);
-            farstSetMaker.setPosition(farstSetPos);
-            farstSetMaker.setMap(map);
-            //前回設定終了円を除去
-            setFinCircle.setMap(null);
-            //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
-            setFinCircle.setCenter(farstSetPos); // 中心点(google.maps.LatLng)
-            setFinCircle.setRadius(setDis);
-            setFinCircle.setMap(map);
-            //https://developers.google.com/maps/documentation/javascript/geometry?hl=ja#Navigation
-            var heading = google.maps.geometry.spherical.computeHeading(rPos, farstSetPos);
-            var distance = google.maps.geometry.spherical.computeDistanceBetween(rPos, farstSetPos);
-            if (heading < 0) { //マイナス角度修正
-                heading += 360;
-            }
-            setBtTextArea("設定までd:" + distance.toFixed(2) + "m,　h:" + heading.toFixed(0) + "°.");
-            //設定場所到着
-            if (distance < setDis) {
-                commandStr = "BTC:15001500m"; //停止
-                if ($('#selfOn').prop('checked') && !reachInfoWinClose) {
-                    reachInfoWin.open(map, farstSetMaker);
-                } else {
-                    farstSetMaker.setMap(null);
-                    sPath.removeAt(0);
-                    reachInfoWinClose = false;
-                }
-            } else {
-                //目的までの方向条件
-                var speed = 1470;
-                //direction は　rotaから見たheadingの角度
-                var direction = heading - jData.rota;
-                // 左　０　～　-１８０、　右　０～１８０
-                if (direction < -180) {
-                    direction += 360;
-                }
-                if (direction > 180) {
-                    direction -= 360;
-                }
-                if (direction > 0) {
-                    //ローバーの右が目的地
-                    if (direction > 90) { //急角度
-                        commandStr = "BTC:" + "1700" + speed + "m";
-                        $("#commandStat").val(jData.rota + '自動操縦 右 急旋回' + direction.toFixed(0));
-                    } else if (direction < 10) {
-                        commandStr = "BTC:" + "1500" + speed + "m";
-                        $("#commandStat").val(jData.rota + '自動操縦　直進' + direction.toFixed(0));
-                    } else { // 右　なだらか
-                        commandStr = "BTC:" + "1600" + speed + "m";
-                        $("#commandStat").val(jData.rota + '自動操縦 右 旋回' + direction.toFixed(0));
-                    }
-                } else {
-                    //ローバーの左が目的地
-                    if (direction < -90) {
-                        commandStr = "BTC:" + "1300" + speed + "m";
-                        $("#commandStat").val(jData.rota + '自動操縦 左 急旋回' + direction.toFixed(0));
-                    } else if (direction > -10) {
-                        commandStr = "BTC:" + "1500" + speed + "m";
-                        $("#commandStat").val(jData.rota + '自動操縦　直進' + direction.toFixed(0));
-                    } else {
-                        commandStr = "BTC:" + "1400" + speed + "m";
-                        $("#commandStat").val(jData.rota + '自動操縦 左　旋回' + direction.toFixed(0));
-                    }
-                }
-            }
-        }
+        autoPilot(jData.rota);
     }
 
 //Videoの向きを判断して回転 
@@ -720,6 +650,81 @@ function readJData(res) {
 //        video.css("-webkit-transform", "rotate(0deg)");
 //        vRotate = 0;
 //    }
+}
+
+//TODO: 自動操縦 (将来的にはAndroidで、）
+function autoPilot(rota) {
+    var setDis = 1.0; //自動運転停止、設定位置までの距離
+    //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
+    var sPath = sPoly.getPath();
+    var num = sPath.getLength();
+    if (num > 0) {
+        farstSetPos = sPath.getAt(0);
+        farstSetMaker.setMap(null);
+        farstSetMaker.setPosition(farstSetPos);
+        farstSetMaker.setMap(map);
+        //前回設定終了円を除去
+        setFinCircle.setMap(null);
+        //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
+        setFinCircle.setCenter(farstSetPos); // 中心点(google.maps.LatLng)
+        setFinCircle.setRadius(setDis);
+        setFinCircle.setMap(map);
+        //https://developers.google.com/maps/documentation/javascript/geometry?hl=ja#Navigation
+        var heading = google.maps.geometry.spherical.computeHeading(rPos, farstSetPos);
+        var distance = google.maps.geometry.spherical.computeDistanceBetween(rPos, farstSetPos);
+        if (heading < 0) { //マイナス角度修正
+            heading += 360;
+        }
+        setBtTextArea("設定までd:" + distance.toFixed(2) + "m,　h:" + heading.toFixed(0) + "°.");
+        //設定場所到着
+        if (distance < setDis) {
+            commandStr = "BTC:15001500m"; //停止
+            if ($('#selfOn').prop('checked') && !reachInfoWinClose) {
+                reachInfoWin.open(map, farstSetMaker);
+            } else {
+                farstSetMaker.setMap(null);
+                sPath.removeAt(0);
+                reachInfoWinClose = false;
+            }
+        } else {
+            //目的までの方向条件
+            var speed = 1470;
+            //direction は　rotaから見たheadingの角度
+            var direction = heading - rota;
+            // 左　０　～　-１８０、　右　０～１８０
+            if (direction < -180) {
+                direction += 360;
+            }
+            if (direction > 180) {
+                direction -= 360;
+            }
+            if (direction > 0) {
+                //ローバーの右が目的地
+                if (direction > 90) { //急角度
+                    commandStr = "BTC:" + "1700" + speed + "m";
+                    $("#commandStat").val(rota + '自動操縦 右 急旋回' + direction.toFixed(0));
+                } else if (direction < 10) {
+                    commandStr = "BTC:" + "1500" + speed + "m";
+                    $("#commandStat").val(rota + '自動操縦　直進' + direction.toFixed(0));
+                } else { // 右　なだらか
+                    commandStr = "BTC:" + "1600" + speed + "m";
+                    $("#commandStat").val(rota + '自動操縦 右 旋回' + direction.toFixed(0));
+                }
+            } else {
+                //ローバーの左が目的地
+                if (direction < -90) {
+                    commandStr = "BTC:" + "1300" + speed + "m";
+                    $("#commandStat").val(rota + '自動操縦 左 急旋回' + direction.toFixed(0));
+                } else if (direction > -10) {
+                    commandStr = "BTC:" + "1500" + speed + "m";
+                    $("#commandStat").val(rota + '自動操縦　直進' + direction.toFixed(0));
+                } else {
+                    commandStr = "BTC:" + "1400" + speed + "m";
+                    $("#commandStat").val(rota + '自動操縦 左　旋回' + direction.toFixed(0));
+                }
+            }
+        }
+    }
 }
 
 function setMsgTextArea(str) {
