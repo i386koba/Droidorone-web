@@ -424,7 +424,7 @@ var gpsAccCircle; //GPS精度 距離
 var gpsMarkerArray = [];
 var encMarkerArray = [];
 
-function poryInitialize(pos) {
+function polyInitialize(pos) {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = { google.maps.SymbolPath.FORWARD_CLOSED_ARROW　};
     //GPSは赤マーカー
@@ -672,7 +672,7 @@ function readJData(res) {
             }
             encPos = google.maps.geometry.spherical.computeOffset(encPos, dis, avgRoll);
             //Encマーカー　青
-            if (eccMarker !== null) {
+            if (encMarker !== null) {
                 encMarker.setMap(null);
             }
             encMarker = new google.maps.Marker({
@@ -724,7 +724,7 @@ function readJData(res) {
         gPos = new google.maps.LatLng(jData.lat, jData.lng);
         //初回
         if (encPos === null) {
-            poryInitialize(gPos);
+            polyInitialize(gPos);
         }
         //前回GPS精度円を除去
         gpsAccCircle.setMap(null);
