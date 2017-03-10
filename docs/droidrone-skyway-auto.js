@@ -52,8 +52,6 @@ function initialize() {
 }
 
 var rPoly;
-var sPoly;
-var subPoly;
 var sMarker = null;
 var initInfoWin;
 var sPos = null; //現在地　設定ポジ
@@ -77,21 +75,7 @@ function mapInitialize() {
         //}],
         zIndex: 1// 重なりの優先値(z-index)
     });
-    //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#PolylineOptions
-    sPoly = new google.maps.Polyline({
-        strokeColor: '#00FFFF',
-        strokeOpacity: 1.0,
-        strokeWeight: 2,
-        editable: true,
-        zIndex: 1// 重なりの優先値(z-index)
-    });
 
-    subPoly = new google.maps.Polyline({
-        strokeColor: '#FF0000',
-        strokeOpacity: 1.0,
-        strokeWeight: 1,
-        zIndex: 1// 重なりの優先値(z-index)
-    });
     //現在位置指定マーカー　青丸
     sMarker = new google.maps.Marker({
         icon: {
@@ -146,6 +130,14 @@ function mapInitialize() {
     });
 }
 
+function checkedInfoWin() {
+    checkInfoWin.close();
+    sDragend = false;
+    rPos = sPos;
+    lastrPos = rPos;
+    rPathDraw(rPos);
+}
+
 var gamePadID;
 var gamePadInterval;
 var pCanvas = null;  //マウスパッド　キャンバス
@@ -155,7 +147,8 @@ var yRange = 400;
 var yCenter = 1500;
 var xRange = 400;
 var xCenter = 1500;
-function   padInitialize() {
+var isDragging = false;
+function padInitialize() {
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
     //pCanvas = document.getElementById("padCanvas");  
@@ -247,7 +240,7 @@ function   padInitialize() {
     padg.strokeRect(100, 100, 40, 40);
 }
 
-function    gamePadInitialize() {
+function gamePadInitialize() {
     // Gemapad API
     //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
     // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
@@ -414,8 +407,6 @@ var gpsAccCount = 0;
 var roverMarker = null;
 var rPos = null; //ローバー表示ポジ 
 var lastrPos = null;
-var subPos = null;
-var lastSubPos = null;
 var jData = null;
 var sumRoll = 0;
 var rollCount = 0;
@@ -581,13 +572,6 @@ function readJData(res) {
     if (lastSubPos === null) {
         lastSubPos = subPos;
     }
-    var subDistance = google.maps.geometry.spherical.computeDistanceBetween(subPos, lastSubPos);
-    if (subDistance > 2) {
-        lastSubPos = subPos;
-        var subPath = subPoly.getPath();
-        subPath.push(subPos);
-        subPoly.setMap(map);
-    }
     //TODO: 自動操縦 (将来的にはAndroidで、）
     if (!$('#autoOff').prop('checked')) {
         autoPilot(jData.rota);
@@ -606,6 +590,7 @@ function readJData(res) {
 //    }
 }
 
+var sPoly;
 var farstSetPos;
 var farstSetMaker = null;
 var reachInfoWin;
@@ -614,6 +599,14 @@ var setFinCircle;
 //TODO: 自動操縦 (将来的にはAndroidで、）
 function autoPilot(rota) {
     if (farstSetMaker === null) {
+        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#PolylineOptions
+        sPoly = new google.maps.Polyline({
+            strokeColor: '#00FFFF',
+            strokeOpacity: 1.0,
+            strokeWeight: 2,
+            editable: true,
+            zIndex: 1// 重なりの優先値(z-index)
+        });
         farstSetMaker = new google.maps.Marker({});
         reachInfoWin = new google.maps.InfoWindow({
             content: '次の移動場所に行くならClose'
@@ -722,14 +715,6 @@ function setMsgTextArea(str) {
 function setBtTextArea(str) {
     $("#btMessages").val(str + "\n" + $("#btMessages").val());
     $("#btMessages").scrollTop();
-}
-
-function checkedInfoWin() {
-    checkInfoWin.close();
-    sDragend = false;
-    rPos = sPos;
-    lastrPos = rPos;
-    rPathDraw(rPos);
 }
 
 //青アイコン位置決定
