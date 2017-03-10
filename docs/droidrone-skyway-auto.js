@@ -48,7 +48,6 @@ function initialize() {
     });
 }
 
-var pCanvas = null;  //マウスパッド　キャンバス
 var padg = null;     //マウスパッド コンテキスト
 var pMouse = {x: null, y: null};// マウス座標
 var yRange = 400;
@@ -69,7 +68,7 @@ function padInitialize() {
     //初期化
     pMouse.x = 120;
     pMouse.y = 120;
-    padDraw();
+    padDraw(pCanvas);
 
     //HTML5のcanvas内の複数の画像をドラッグ＆ドロップさせてみる http://qiita.com/akase244/items/b801f435e85ea67a70eb
     pCanvas.addEventListener("mousedown", function (e) {
@@ -87,7 +86,7 @@ function padInitialize() {
         isDragging = false;
         pMouse.x = 120;
         pMouse.y = 120;
-        padDraw();
+        padDraw(pCanvas);
     }, false);
 
     pCanvas.addEventListener("mousemove", function (e) {
@@ -99,7 +98,7 @@ function padInitialize() {
             var rect = e.target.getBoundingClientRect();
             pMouse.x = parseInt(e.clientX - rect.left);
             pMouse.y = parseInt(e.clientY - rect.top);
-            padDraw();
+            padDraw(pCanvas);
         }
     }, false);
 
@@ -108,7 +107,7 @@ function padInitialize() {
         isDragging = false;
         pMouse.x = 120;
         pMouse.y = 120;
-        padDraw();
+        padDraw(pCanvas);
     }, false);
 
     //サーボPWMの制御幅で角度コントロール
@@ -147,10 +146,68 @@ function padInitialize() {
     //センター位置の四角
     padg.strokeRect(100, 100, 40, 40);
 }
+//マウスによるPAD操作の描画
+function  padDraw(canvas) {
+    // クリア
+    mouseg.clearRect(0, 0, canvas.width, canvas.height);
+    //カメラ位置　横方向センターか？
+    if ($("#xCamera").val() !== $("#xCCenter").val()) {
+        //if (peerdConn) {
+        //    peerdConn.send(("0" + $("#xCCenter").val()).slice(-4) + "x");
+        //}
+        return;
+    }
+    // マウスの位置に三角を描画
+    mouseg.beginPath();
+    //パスを使って図形を描画するには？ http://javascript-api.sophia-it.com/reference/%E3%83%91%E3%82%B9%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E5%9B%B3%E5%BD%A2%E3%82%92%E6%8F%8F%E7%94%BB%E3%81%99%E3%82%8B%E3%81%AB%E3%81%AF%EF%BC%9F
+    //mouseg.arc(pMouse.x, pMouse.y, 16, 0, Math.PI * 2, false);
+    mouseg.moveTo(pMouse.x, pMouse.y - 20);
+    mouseg.lineTo(pMouse.x - 15, pMouse.y + 10);
+    mouseg.lineTo(pMouse.x + 15, pMouse.y + 10);
+    mouseg.closePath();
+    mouseg.strokeStyle = "blue"; // 線の色を指定する
+    mouseg.fillStyle = "green";  // 塗りつぶしの色を指定する
+    mouseg.fill();
+    mouseg.stroke();
+    // マウスの情報を表示
+    //padg.fillStyle = "rgba(0, 0, 0, 1.0)";
+    //padg.fillText("Mouse X : " + pMouse.x, 8, 48);
+    //padg.fillText("Mouse Y : " + pMouse.y, 8, 64);
+    var yR = Number(yRange);
+    var yC = Number(yCenter);
+    var xR = Number(xRange);
+    var xC = Number(xCenter);
+    pMouse.x -= 120;
+    pMouse.y -= 120;
+    //var mStr = parseInt(pMouse.x) + ", " + parseInt(pMouse.y);
+    //GamePADのセンターが出ないので、センターより20pxずれないとpMouseを加算しない。20px以内は0
+    if (Math.abs(pMouse.x) <= 20) {
+        pMouse.x = 0;
+    } else if (pMouse.x > 20) {
+        pMouse.x -= 20;
+    } else if (pMouse.x < -20) {
+        pMouse.x += 20;
+    }
 
-var gamePadID;
-var gamePadInterval;
+    if (Math.abs(pMouse.y) <= 20) {
+        pMouse.y = 0;
+    } else if (pMouse.y > 20) {
+        pMouse.y -= 20;
+    } else if (pMouse.y < -20) {
+        pMouse.y += 20;
+    }
+
+    //Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
+    var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
+    var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
+    commandStr = "BTC:" + xPWM + "" + yPWM + "m";
+    //JavaScriptで指定した数の小数も表示する http://d.hatena.ne.jp/necoyama3/20090904/1252074054
+    //$("#mXY").html(parseFloat(pMouse.x).toFixed(1) + ", " + parseFloat(pMouse.y).toFixed(1));
+    $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y));// + "/" + mStr);
+}
+
 function gamePadInitialize() {
+    var gamePadID, gamePadInterval;
     // Gemapad API
     //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
     // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
@@ -190,7 +247,8 @@ function gamePadInitialize() {
                 $("#commandStat").val(gStr + "ゲームパッドが接続されました\n");
                 //GamePad監視 一定時間隔で、繰り返し実行される関数 10FPS
                 clearInterval(gamePadInterval);
-                gamePadInterval = setInterval(gamePadListen, 100);
+                //setInterval()やsetTimeout()で関数に引数を与えるには
+                gamePadInterval = setInterval(function () {gamePadListen(gamePadID, gamePadInterval);}, 100);
                 console.log("ゲームパッドが接続されました");
                 //jQueryのprop()でdisabled属性を切り替える http://qiita.com/pugiemonn/items/5db6fb8fd8a303406b17
                 $("#gpSW").prop("disabled", true);
@@ -210,6 +268,50 @@ function gamePadInitialize() {
     }
 }
 
+function gamePadListen(gamePadID, gamePadInterval) {
+    var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
+    var gamePad = gamepad_list[gamePadID];
+    //接続確認
+    if (!gamePad) {
+        clearInterval(gamePadInterval);
+        $("#gpSW").prop("disabled", false);
+        console.log("ゲームパッドの接続が解除されました。");
+        $("#commandStat").val("ゲームパッドの接続が解除されました。");
+        pMouse.x = 120;
+        pMouse.y = 120;
+        padDraw();
+        return;
+    }
+    // 軸リスト axes
+    var axes = gamePad.axes;
+    if (axes !== lastAxes) {
+        //http://www.w3.org/TR/gamepad/#remapping
+        //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
+        //左スティック　左右　axes[0] (-1.0 ~ +1.0)
+        //左スティック　上下　axes[1] 
+        //右スティック　左右　axes[2]
+        //右スティック　上下　axes[3]
+        //console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
+        pMouse.x = (axes[0] * 120) + 120;
+        pMouse.y = (axes[1] * 120) + 120;
+        padDraw();
+    }
+    lastAxes = axes;
+    /*   // ボタンリスト
+     var str;
+     var buttons = gamepad.buttons; 		 str += "buttons: {\n";
+     var j;
+     var n = buttons.length;
+     for (j = 0; j < n; j++) {
+     // GamepadButton オブジェクトを取得
+     var button = buttons[j];
+     str += "  \"" + j + "\": { ";
+     // ボタン押下状態
+     str += "pressed:" + button.pressed + " , ";
+     // ボタン入力強度
+     str += "value:" + button.value + " }\n";
+     } */
+}
 function uiInitialize() {
     //Camera servo control　
     //レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
@@ -540,13 +642,13 @@ function readJData(res) {
         setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
         //video画面をGD保存 $('#android-video');
         //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-        $('#tmp-canvas').attr("width",  $('#android-video').get(0).videoWidth);
-        $('#tmp-canvas').attr("height",  $('#android-video').get(0).videoHeight);
+        $('#tmp-canvas').attr("width", $('#android-video').get(0).videoWidth);
+        $('#tmp-canvas').attr("height", $('#android-video').get(0).videoHeight);
         //http://www.html5.jp/tag/elements/video.html
         //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
         var tmpCanvas = $('#tmp-canvas').get(0);
         var tmpCtx = tmpCanvas.getContext("2d");
-        tmpCtx.drawImage( $('#android-video').get(0), 0, 0);
+        tmpCtx.drawImage($('#android-video').get(0), 0, 0);
         //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
         var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
         var rJson = JSON.stringify(jData);
@@ -1064,117 +1166,12 @@ function peerStart(destPeerId) {
             var url = window.URL.createObjectURL(stream);
             setMsgTextArea('stream url: ' + url);
             // video要素のsrcに設定することで、映像を表示する 	 	
-             $('#android-video').prop('src', url);
+            $('#android-video').prop('src', url);
         });
         call.on('error', function (err) {
             setMsgTextArea('call-err : ' + err);
         });
     });
-}
-
-function gamePadListen() {
-    var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
-    var gamePad = gamepad_list[gamePadID];
-    //接続確認
-    if (!gamePad) {
-        clearInterval(gamePadInterval);
-        $("#gpSW").prop("disabled", false);
-        console.log("ゲームパッドの接続が解除されました。");
-        $("#commandStat").val("ゲームパッドの接続が解除されました。");
-        pMouse.x = 120;
-        pMouse.y = 120;
-        padDraw();
-        return;
-    }
-    // 軸リスト axes
-    var axes = gamePad.axes;
-    if (axes !== lastAxes) {
-        //http://www.w3.org/TR/gamepad/#remapping
-        //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
-        //左スティック　左右　axes[0] (-1.0 ~ +1.0)
-        //左スティック　上下　axes[1] 
-        //右スティック　左右　axes[2]
-        //右スティック　上下　axes[3]
-        //console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
-        pMouse.x = (axes[0] * 120) + 120;
-        pMouse.y = (axes[1] * 120) + 120;
-        padDraw();
-    }
-    lastAxes = axes;
-    /*   // ボタンリスト
-     var str;
-     var buttons = gamepad.buttons; 		 str += "buttons: {\n";
-     var j;
-     var n = buttons.length;
-     for (j = 0; j < n; j++) {
-     // GamepadButton オブジェクトを取得
-     var button = buttons[j];
-     str += "  \"" + j + "\": { ";
-     // ボタン押下状態
-     str += "pressed:" + button.pressed + " , ";
-     // ボタン入力強度
-     str += "value:" + button.value + " }\n";
-     } */
-}
-
-//マウスによるPAD操作の描画
-function  padDraw() {
-    // クリア
-    mouseg.clearRect(0, 0, pCanvas.width, pCanvas.height);
-    //カメラ位置　横方向センターか？
-    if ($("#xCamera").val() !== $("#xCCenter").val()) {
-        //if (peerdConn) {
-        //    peerdConn.send(("0" + $("#xCCenter").val()).slice(-4) + "x");
-        //}
-        return;
-    }
-    // マウスの位置に三角を描画
-    mouseg.beginPath();
-    //パスを使って図形を描画するには？ http://javascript-api.sophia-it.com/reference/%E3%83%91%E3%82%B9%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E5%9B%B3%E5%BD%A2%E3%82%92%E6%8F%8F%E7%94%BB%E3%81%99%E3%82%8B%E3%81%AB%E3%81%AF%EF%BC%9F
-    //mouseg.arc(pMouse.x, pMouse.y, 16, 0, Math.PI * 2, false);
-    mouseg.moveTo(pMouse.x, pMouse.y - 20);
-    mouseg.lineTo(pMouse.x - 15, pMouse.y + 10);
-    mouseg.lineTo(pMouse.x + 15, pMouse.y + 10);
-    mouseg.closePath();
-    mouseg.strokeStyle = "blue"; // 線の色を指定する
-    mouseg.fillStyle = "green";  // 塗りつぶしの色を指定する
-    mouseg.fill();
-    mouseg.stroke();
-    // マウスの情報を表示
-    //padg.fillStyle = "rgba(0, 0, 0, 1.0)";
-    //padg.fillText("Mouse X : " + pMouse.x, 8, 48);
-    //padg.fillText("Mouse Y : " + pMouse.y, 8, 64);
-    var yR = Number(yRange);
-    var yC = Number(yCenter);
-    var xR = Number(xRange);
-    var xC = Number(xCenter);
-    pMouse.x -= 120;
-    pMouse.y -= 120;
-    //var mStr = parseInt(pMouse.x) + ", " + parseInt(pMouse.y);
-    //GamePADのセンターが出ないので、センターより20pxずれないとpMouseを加算しない。20px以内は0
-    if (Math.abs(pMouse.x) <= 20) {
-        pMouse.x = 0;
-    } else if (pMouse.x > 20) {
-        pMouse.x -= 20;
-    } else if (pMouse.x < -20) {
-        pMouse.x += 20;
-    }
-
-    if (Math.abs(pMouse.y) <= 20) {
-        pMouse.y = 0;
-    } else if (pMouse.y > 20) {
-        pMouse.y -= 20;
-    } else if (pMouse.y < -20) {
-        pMouse.y += 20;
-    }
-
-    //Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
-    var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
-    var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
-    commandStr = "BTC:" + xPWM + "" + yPWM + "m";
-    //JavaScriptで指定した数の小数も表示する http://d.hatena.ne.jp/necoyama3/20090904/1252074054
-    //$("#mXY").html(parseFloat(pMouse.x).toFixed(1) + ", " + parseFloat(pMouse.y).toFixed(1));
-    $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y));// + "/" + mStr);
 }
 
 //未使用//現在地の地図の高度を表示
@@ -1212,8 +1209,8 @@ function gElevation(pos) {
 
 //テスト用
 function getSnap() {
-    var videoWidth =  $('#android-video').get(0).videoWidth;
-    var videoHeight =  $('#android-video').get(0).videoHeight;
+    var videoWidth = $('#android-video').get(0).videoWidth;
+    var videoHeight = $('#android-video').get(0).videoHeight;
     console.log("videoWidth:Height = " + videoWidth + " : " + videoHeight);
     //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
     $('#tmp-canvas').attr("width", videoWidth);
@@ -1222,7 +1219,7 @@ function getSnap() {
     //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
     var tmpCanvas = $('#tmp-canvas').get(0);
     var tmpCtx = tmpCanvas.getContext("2d");
-    tmpCtx.drawImage(video.get(0), 0, 0);
+    tmpCtx.drawImage($('#android-video').get(0), 0, 0);
     var img = new Image();
     // 第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
     img.src = tmpCanvas.toDataURL("image/jpeg", 0.5);
