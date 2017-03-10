@@ -5,6 +5,7 @@
 var google;
 google.maps.event.addDomListener(window, 'load', initialize);
 var map;
+var gpsAccCircle; //GPS精度 距離
 function initialize() {
     //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
     var mapOptions = {
@@ -21,7 +22,20 @@ function initialize() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
             // success callback
-            map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+            var pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            map.setCenter(pos);
+            //https://developers.google.com/maps/documentation/javascript/reference#Circle
+            gpsAccCircle = new google.maps.Circle({
+                fillColor: '#ff0000', // 塗りつぶし色
+                fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
+                strokeColor: '#ff0000', // 外周色
+                strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
+                strokeWeight: 1, // 外周太さ（ピクセル）
+                zIndex: 1, //
+                center: pos,
+                radius: position.coords.accuracy,
+                map: map
+            });
         }, function (error) {
             // error callback
             switch (error.code) {
@@ -35,6 +49,7 @@ function initialize() {
                     $("#orient").html("ブラウザの位置情報がタイムアウトしました");
                     break;
             }
+            //POS取得できなかった場合。
             map.setCenter(new google.maps.LatLng(35.8401073, 137.9581047));
         });
     }
@@ -248,7 +263,9 @@ function gamePadInitialize() {
                 //GamePad監視 一定時間隔で、繰り返し実行される関数 10FPS
                 clearInterval(gamePadInterval);
                 //setInterval()やsetTimeout()で関数に引数を与えるには
-                gamePadInterval = setInterval(function () {gamePadListen(gamePadID, gamePadInterval);}, 100);
+                gamePadInterval = setInterval(function () {
+                    gamePadListen(gamePadID, gamePadInterval);
+                }, 100);
                 console.log("ゲームパッドが接続されました");
                 //jQueryのprop()でdisabled属性を切り替える http://qiita.com/pugiemonn/items/5db6fb8fd8a303406b17
                 $("#gpSW").prop("disabled", true);
@@ -312,6 +329,7 @@ function gamePadListen(gamePadID, gamePadInterval) {
      str += "value:" + button.value + " }\n";
      } */
 }
+
 function uiInitialize() {
     //Camera servo control　
     //レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
@@ -383,9 +401,23 @@ function uiInitialize() {
     });
 
     $("#RcBatVol").html("-.-");
-    //TODO: 位置データデバック用自動更新 
-    //setInterval("autoCommandTest()", 1000);
 
+    //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
+    //マーカー、パスのクリア
+    $("#mapClear").click(function () {
+        for (var i = 0; i < rMarkerArray.length; i++) {
+            rMarkerArray[i].setMap(null);
+        }
+        rMarkerArray = [];
+        var rPath = rPoly.getPath();
+        //sPoly.setMap(null);
+        rPoly.setMap(null);
+
+        //ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
+        //MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
+        rPath.clear();
+        //rPath.push(sPos);
+    });
     //テスト http://qiita.com/shizuma/items/d561f37f864c3ebb5096 jQuery 便利なonを使おう（on click)
     //$('#deBug').click(getSnap);
     //debug カクチュウ　35.764267, 137.954661
@@ -394,40 +426,26 @@ function uiInitialize() {
     });
 }
 
-var commandStr = "";
-var lastCommand = "";
-
-
-var lastBtR = "";
-var gpsAccCount = 0;
-var roverMarker = null;
-var lastrPos = null;
-var jData = null;
-var sumRoll = 0;
-var rollCount = 0;
-const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
-var oriBar = "W";
-for (var i = 0; i < ori8.length; i++) {
-    oriBar += ("|........|........|" + ori8[i]);
+function setMsgTextArea(str) {
+    $("#messages").val(str + "\n" + $("#messages").val());
+    $("#messages").scrollTop();
 }
-var rPos = null; //ローバー表示ポジ 
-var rPoly;
-var sMarker = null;
-var initInfoWin;
-var setPos = null; //現在地　設定ポジ
-var sDragend = false;
-var wPos = null; //ホイル回転推定ポジ
-var gpsAccCircle;
-var checkInfoWin;
-var gPos = null; //GPSポジ
+
+function setBtTextArea(str) {
+    $("#btMessages").val(str + "\n" + $("#btMessages").val());
+    $("#btMessages").scrollTop();
+}
+
+var gPos = null; //GPS表示ポジ 
+var gPoly; //GPSポリライン
+
 
 function gpsInitialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
-    //var lineSymbol = {
-    //: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
-    //};
-    rPoly = new google.maps.Polyline({
-        strokeColor: '#0000FF',
+    //var lineSymbol = { google.maps.SymbolPath.FORWARD_CLOSED_ARROW　};
+    //GPSは赤マーカー
+    gPoly = new google.maps.Polyline({
+        strokeColor: '#FF0000',
         strokeOpacity: 1.0,
         strokeWeight: 3,
         //icons: [{ 最後にしかマーカーされない
@@ -437,7 +455,18 @@ function gpsInitialize() {
         zIndex: 1// 重なりの優先値(z-index)
     });
 
-    //現在位置指定マーカー　青丸
+    //エンコーダーは青マーカー
+    encPoly = new google.maps.Polyline({
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 3,
+        //icons: [{ 最後にしかマーカーされない
+        //icon: lineSymbol,
+        //offset: '100%'
+        //}],
+        zIndex: 1// 重なりの優先値(z-index)
+    });
+    //現在位置指定マーカー　青丸　（ポリラインの終端。）
     sMarker = new google.maps.Marker({
         icon: {
             path: google.maps.SymbolPath.CIRCLE,
@@ -446,7 +475,7 @@ function gpsInitialize() {
         },
         draggable: true, // ドラッグ可能にする
         map: map,
-        position: gPos,
+        //position: gPos,
         zIndex: 3// 重gりの優先値(z-index)
     });
     //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
@@ -469,49 +498,108 @@ function gpsInitialize() {
             sDragend = false;
         });
     });
-    //マーカー、パスのクリア
-    $("#mapClear").click(function () {
-        for (var i = 0; i < rMarkerArray.length; i++) {
-            rMarkerArray[i].setMap(null);
-        }
-        rMarkerArray = [];
-        var rPath = rPoly.getPath();
-        //sPoly.setMap(null);
-        rPoly.setMap(null);
-
-        //ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
-        //MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
-        rPath.clear();
-        //rPath.push(sPos);
-    });
-
-    //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
-    //https://developers.google.com/maps/documentation/javascript/reference#Circle
-    gpsAccCircle = new google.maps.Circle({
-        fillColor: '#ff0000', // 塗りつぶし色
-        fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
-        strokeColor: '#ff0000', // 外周色
-        strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
-        strokeWeight: 1, // 外周太さ（ピクセル）
-        zIndex: 1 //
-    });
-    gpsAccCircle.setCenter(gPos);
-    // 中心点(google.maps.LatLng)
-    gpsAccCircle.setRadius(100);
-    gpsAccCircle.setMap(map);
 
     checkInfoWin = new google.maps.InfoWindow({
         content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
     });
 }
-
 function checkedInfoWin() {
     checkInfoWin.close();
     sDragend = false;
     rPos = setPos;
     lastrPos = rPos;
-    rPathDraw(rPos);
+    //rPathDraw(rPos);
 }
+var encPos = null; //ホイル回転推定ポジ
+var encPoly; //ホイル回転推定ポリライン
+var sMarker = null; //現在地修正マーカー
+var initInfoWin; //位置修正出来ますよインフォ
+var setPos = null; //位置修正ポジ
+var sDragend = false; //位置修正中
+var checkInfoWin; //位置修正決定インフォ
+
+//青アイコン位置決定
+var encMarkerArray = [];
+function encPathDraw(pos) {
+    //位置設定アイコンを移動。
+    if (!sDragend) {
+        sMarker.setPosition(pos);
+    }
+    if (jData === null) {
+        return;
+    }
+    var rPath = rPoly.getPath();
+    //GoogleMAP上の高度
+    //gElevation(rPos);
+    rPath.push(pos);
+
+    var rMarker = new google.maps.Marker({
+        position: pos,
+        icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
+            scale: 3,
+            strokeColor: '#00FF00',
+            rotation: jData.rota
+        },
+        map: map,
+        zIndex: 1// 重なりの優先値(z-index)
+    });
+    rMarkerArray.push(rMarker);
+    // infowindow内のコンテンツ(html)を作成 http://kwski.net/api/799/
+    var time = new Date(jData.time); //time.toLocaleString()
+    var infoWinMsg = '<div class="infowindow' + jData.no + '">'
+            + 'No.' + jData.no
+            // '<img src="' + imgfile + '" width="100">'
+            + ', ' + time.toLocaleString() + '<br />'
+            + ',GPS高度:' + jData.alti + 'm'
+            + ',方向:' + jData.rota + '°' + ',pitch ' + jData.pitch + '°'
+            + ',roll:' + jData.roll + '°'
+            + '<br>btr:' + jData.btr + '</div>';
+    //関数で呼ばないとInfowindowが重なる
+    attachMessage(rMarker, infoWinMsg);
+    rPoly.setMap(null);
+    rPoly.setMap(map);
+}
+//ローバーアイコンのWindow
+var lastInfoWin = null;
+function attachMessage(marker, msg) {
+    //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
+    var infoWin = new google.maps.InfoWindow({
+        maxWidth: 300, // infowindowの最大幅を設定
+        content: msg
+    });
+    // イベントを取得するListenerを追加
+    google.maps.event.addListener(marker, 'click', function () {
+        //次のウィンドウが表示されるまでウィンドウを表示
+        if (lastInfoWin !== null) {
+            lastInfoWin.close();
+        }
+        lastInfoWin = infoWin;
+        //ウィンドウオープンopen(map:Map|StreetViewPanorama, anchor?:MVCObject)
+        infoWin.open(marker.getMap(), marker);
+    });
+    // mouseoutイベントを取得するListenerを追加
+    //google.maps.event.addListener(marker, 'mouseout', function(){
+    google.maps.event.addListener(infoWin, 'closeclick', function () {
+        infoWin.close();
+    });
+}
+
+var commandStr = "";
+var lastCommand = "";
+var lastBtR = "";
+var gpsAccCount = 0;
+var lastGpsPos = null;
+var jData = null;
+var sumRoll = 0;
+var rollCount = 0;
+const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
+var oriBar = "W";
+for (var i = 0; i < ori8.length; i++) {
+    oriBar += ("|........|........|" + ori8[i]);
+}
+var gpsMarker = null;
+var encMarker = null;
+
 function readJData(res) {
     $("#JSON").html(res);
     //Androidデータ読み出し
@@ -580,6 +668,10 @@ function readJData(res) {
     if (jData.lat === 'NoData') {
         $("#orient").html("GPSが受信できません");
     } else {
+        //初回
+        if (gPos === null) {
+            gpsInitialize();
+        }
         gPos = new google.maps.LatLng(jData.lat, jData.lng);
         //前回GPS精度円を除去
         gpsAccCircle.setMap(null);
@@ -594,29 +686,20 @@ function readJData(res) {
         gpsAccCount--;
     }
 
-    //GPSによる現在地
+    //地図中心　GPS
     if ($('#gpsOn').prop('checked')) {
-        rPos = gPos;
-        subPos = wPos;
+        map.setCenter(gPos);
     }
-
-    //ホイルセンサーによる現在地
+    //地図中心　エンコーダ
     if ($('#gpsOff').prop('checked')) {
-        rPos = wPos;
-        subPos = gPos;
+        map.setCenter(encPos);
     }
-
-    //マップ中心をローバーアイコンで移動
-    if ($('#MapPanOff').prop('checked')) {
-        map.setCenter(rPos);
+    //GPSマーカー　赤
+    if (gpsMarker !== null) {
+        gpsMarker.setMap(null);
     }
-
-    if (roverMarker !== null) {
-        roverMarker.setMap(null);
-    }
-    //ローバーマーカー　赤
-    roverMarker = new google.maps.Marker({
-        position: rPos,
+    gpsMarker = new google.maps.Marker({
+        position: gPos,
         icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
             //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
             // 矢印中心が先っぽだったのでPath作った。
@@ -627,11 +710,11 @@ function readJData(res) {
         map: map,
         zIndex: 2// 重なりの優先値(z-index)
     });
-
-    if (lastrPos === null) {
-        lastrPos = rPos;
+    //GPS初回受信　エンコーダ位置指定
+    if (lastGpsPos === null) {
+        lastGpsPos = gPos;
         initInfoWin.open(map, sMarker);
-        sMarker.setPosition(rPos);
+        sMarker.setPosition(gPos);
     }
     //距離が5m動いたらパス描画,データ記録
     //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
@@ -802,82 +885,6 @@ function autoPilot(rota) {
             }
         }
     }
-}
-
-function setMsgTextArea(str) {
-    $("#messages").val(str + "\n" + $("#messages").val());
-    $("#messages").scrollTop();
-}
-
-function setBtTextArea(str) {
-    $("#btMessages").val(str + "\n" + $("#btMessages").val());
-    $("#btMessages").scrollTop();
-}
-
-//青アイコン位置決定
-var rMarkerArray = [];
-function rPathDraw(pos) {
-    //位置設定アイコンを移動。
-    if (!sDragend) {
-        sMarker.setPosition(pos);
-    }
-    if (jData === null) {
-        return;
-    }
-    var rPath = rPoly.getPath();
-    //GoogleMAP上の高度
-    //gElevation(rPos);
-    rPath.push(pos);
-
-    var rMarker = new google.maps.Marker({
-        position: pos,
-        icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
-            scale: 3,
-            strokeColor: '#00FF00',
-            rotation: jData.rota
-        },
-        map: map,
-        zIndex: 1// 重なりの優先値(z-index)
-    });
-    rMarkerArray.push(rMarker);
-    // infowindow内のコンテンツ(html)を作成 http://kwski.net/api/799/
-    var time = new Date(jData.time); //time.toLocaleString()
-    var infoWinMsg = '<div class="infowindow' + jData.no + '">'
-            + 'No.' + jData.no
-            // '<img src="' + imgfile + '" width="100">'
-            + ', ' + time.toLocaleString() + '<br />'
-            + ',GPS高度:' + jData.alti + 'm'
-            + ',方向:' + jData.rota + '°' + ',pitch ' + jData.pitch + '°'
-            + ',roll:' + jData.roll + '°'
-            + '<br>btr:' + jData.btr + '</div>';
-    //関数で呼ばないとInfowindowが重なる
-    attachMessage(rMarker, infoWinMsg);
-    rPoly.setMap(null);
-    rPoly.setMap(map);
-}
-//ローバーアイコンのWindow
-var lastInfoWin = null;
-function attachMessage(marker, msg) {
-    //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
-    var infoWin = new google.maps.InfoWindow({
-        maxWidth: 300, // infowindowの最大幅を設定
-        content: msg
-    });
-    // イベントを取得するListenerを追加
-    google.maps.event.addListener(marker, 'click', function () {
-        //次のウィンドウが表示されるまでウィンドウを表示
-        if (lastInfoWin !== null) {
-            lastInfoWin.close();
-        }
-        lastInfoWin = infoWin;
-        //ウィンドウオープンopen(map:Map|StreetViewPanorama, anchor?:MVCObject)
-        infoWin.open(marker.getMap(), marker);
-    });
-    // mouseoutイベントを取得するListenerを追加
-    //google.maps.event.addListener(marker, 'mouseout', function(){
-    google.maps.event.addListener(infoWin, 'closeclick', function () {
-        infoWin.close();
-    });
 }
 
 var gapi;
