@@ -2,8 +2,55 @@
 //http://qiita.com/kazu56/items/36b025dac5802b76715c 【jQuery】フォーム部品の取得・設定まとめ
 //テストページ
 //https://i386koba.github.io/Droidorone-web/
+
+google.maps.event.addDomListener(window, 'load', initialize);
 var map;
 var gPos = null; //GPSポジ
+function initialize() {
+    //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
+    var mapOptions = {
+        zoom: 18,
+        //center: gPos,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        //mapTypeId: google.maps.MapTypeId.TERRAIN
+        noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
+    };
+    map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+    //初回地図定義 （ブラウザの位置情報が取得できない場合）サーリューション35.8401073,137.9581047
+    gPos = new google.maps.LatLng(35.8401073, 137.9581047);
+    //TODO: Geolocation API の使用が　安全なサイトに制限、SSL導入しなければならない、
+    //http://netbeans-org.1045718.n5.nabble.com/How-to-debug-https-or-SSL-web-applications-in-netbeans-td2885406.html
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+            // success callback
+            gPos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            map.setCenter(gPos);
+        }, function (error) {
+            // error callback
+            switch (error.code) {
+                case 1:
+                    $("#orient").html("ブラウザの位置情報の利用が許可されていません");
+                    break;
+                case 2:
+                    $("#orient").html("ブラウザの位置情報が判定できません");
+                    break;
+                case 3:
+                    $("#orient").html("ブラウザの位置情報がタイムアウトしました");
+                    break;
+            }
+            map.setCenter(gPos);
+        });
+    }
+    mapInitialize();
+    padInitialize();
+    gamePadInitialize();
+    uiInitialize();
+    //終了時
+    $(window).on("beforeunload", function () {
+        peer.destroy();
+    });
+}
+
 var rPoly;
 var sPoly;
 var subPoly;
@@ -13,85 +60,14 @@ var sDragend = false;
 var wPos = null; //ホイル回転推定ポジ
 var gpsAccCircle;
 var setFinCircle;
-var gamePadID;
-var gamePadInterval;
-var pCanvas = null;  //マウスパッド　キャンバス
-var padg = null;     //マウスパッド コンテキスト
-var pMouse = {x: null, y: null};// マウス座標
+var farstSetPos;
+var farstSetMaker;
+var reachInfoWin;
+var reachInfoWinClose = false;
+var checkInfoWin;
 var isDragging = false; //マウスドラグフラグ
 var initInfoWin;
-var yRange = 400;
-var yCenter = 1500;
-var xRange = 400;
-var xCenter = 1500;
-var commandStr = "";
-var lastCommand = "";
-var video;
-var google;
-var lastBtR = "";
-var gpsAccCount = 0;
-var roverMarker = null;
-var rPos = null; //ローバー表示ポジ 
-var lastrPos = null;
-var subPos = null;
-var lastSubPos = null;
-var jData = null;
-var sumRoll = 0;
-var rollCount = 0;
-
-var farstSetPos;
-var farstSetMaker = new google.maps.Marker({});
-var reachInfoWin = new google.maps.InfoWindow({
-    content: '次の移動場所に行くならClose'
-            //'<button onClick="checkedInfoWin()"></button>'
-});
-var reachInfoWinClose = false;
-var checkInfoWin = new google.maps.InfoWindow({
-    content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
-});
-var hudCanvas = null;  //ヘッドアップ　キャンバス
-var hugg = null;     //ヘッドアップ コンテキスト
-const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
-var oriBar = "W";
-for (var i = 0; i < ori8.length; i++) {
-    oriBar += ("|........|........|" + ori8[i]);
-}
-google.maps.event.addDomListener(window, 'load', initialize);
-var gapi;
-var peer;
-var peerdConn = null; // 接続したコネを保存しておく変数
-//2015.06
-var helloAndroid = false;
-var lastAxes;
-var googleName;
-var googleID;
-var skyWayFolderID = "";
-var saveDirID = 0;
-//ローバーアイコンのWindow
-var lastInfoWin = null;
-//青アイコン位置決定
-var rMarkerArray = [];
-var rMarkerArray = [];
-//SkyWayに関するドキュメントとサンプルアプリ
-//https://nttcom.github.io/skyway/documentation.html
-// SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
-const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
-//Drive REST API JavaScript Quickstart
-//https://developers.google.com/drive/v2/web/quickstart/js
-// Your Client ID can be retrieved from your project in the Google
-// Developer Console, https://console.developers.google.com
-const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
-//google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
-//OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
-const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
-const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
-
-const boundary = '-------314159265358979323846';
-const delimiter = "\r\n--" + boundary + "\r\n";
-const close_delim = "\r\n--" + boundary + "--";
-
-
-function initialize() {
+function mapInitialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = {
     //: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
@@ -121,39 +97,6 @@ function initialize() {
         strokeWeight: 1,
         zIndex: 1// 重なりの優先値(z-index)
     });
-    //初回地図定義 （ブラウザの位置情報が取得できない場合）サーリューション35.8401073,137.9581047
-    gPos = new google.maps.LatLng(35.8401073, 137.9581047);
-    //TODO: Geolocation API の使用が　安全なサイトに制限、SSL導入しなければならない、
-    //http://netbeans-org.1045718.n5.nabble.com/How-to-debug-https-or-SSL-web-applications-in-netbeans-td2885406.html
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function (position) {
-            // success callback
-            gPos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-        }, function (error) {
-            // error callback
-            switch (error.code) {
-                case 1:
-                    $("#orient").html("ブラウザの位置情報の利用が許可されていません");
-                    break;
-                case 2:
-                    $("#orient").html("ブラウザの位置情報が判定できません");
-                    break;
-                case 3:
-                    $("#orient").html("ブラウザの位置情報がタイムアウトしました");
-                    break;
-            }
-        });
-    }
-    //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
-    var mapOptions = {
-        zoom: 18,
-        center: gPos,
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        //mapTypeId: google.maps.MapTypeId.TERRAIN
-        noClear: false //http://www.openspc2.org/Google/Maps/api3/Map_option/noClear/
-    };
-    map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-    map.setCenter(gPos);
     //現在位置指定マーカー　青丸
     sMarker = new google.maps.Marker({
         icon: {
@@ -210,7 +153,16 @@ function initialize() {
     // 中心点(google.maps.LatLng)
     gpsAccCircle.setRadius(100);
     gpsAccCircle.setMap(map);
-
+    farstSetMaker = new google.maps.Marker({});
+    reachInfoWin = new google.maps.InfoWindow({
+        content: '次の移動場所に行くならClose'
+                //'<button onClick="checkedInfoWin()"></button>'
+    });
+    
+    checkInfoWin = new google.maps.InfoWindow({
+        content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
+    });
+    
     setFinCircle = new google.maps.Circle({
         fillColor: '#00ff00', // 塗りつぶし色 緑
         fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
@@ -220,6 +172,21 @@ function initialize() {
         zIndex: 1 //
     });
 
+    google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
+        reachInfoWinClose = true;
+    });
+}
+
+var gamePadID;
+var gamePadInterval;
+var pCanvas = null;  //マウスパッド　キャンバス
+var padg = null;     //マウスパッド コンテキスト
+var pMouse = {x: null, y: null};// マウス座標
+var yRange = 400;
+var yCenter = 1500;
+var xRange = 400;
+var xCenter = 1500;
+function   padInitialize() {
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
     //pCanvas = document.getElementById("padCanvas");  
@@ -309,10 +276,11 @@ function initialize() {
     padg.stroke();
     //センター位置の四角
     padg.strokeRect(100, 100, 40, 40);
+}
 
+function    gamePadInitialize() {
     // Gemapad API
     //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_MAPPING
-    // 
     // ゲームパッドをXboxコントローラーとして使う　x360ce の使い方
     // http://peekness.blog.jp/archives/31808206.html
     //上記64bit版　Chrome PS2コントローラUSB変換で試してOK。
@@ -320,7 +288,6 @@ function initialize() {
     //　HTML5-JavaScript-Gamepad-Controller-Library　https://github.com/kallaspriit/HTML5-JavaScript-Gamepad-Controller-Library
 
     if (window.GamepadEvent) {
-        console.log("GamepadEvent!");
         // ゲームパッドを接続すると実行されるイベント
         //window.addEventListener("gamepadconnected", function (e) {
         // console.log(e.gamepad);
@@ -369,6 +336,9 @@ function initialize() {
             clearInterval(gamePadInterval);
         });
     }
+}
+
+function uiInitialize() {
     //Camera servo control　
     //レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
     //Xカメラ操作
@@ -466,10 +436,25 @@ function initialize() {
     });
 }
 
-google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
-    reachInfoWinClose = true;
-});
-
+var commandStr = "";
+var lastCommand = "";
+var video;
+var google;
+var lastBtR = "";
+var gpsAccCount = 0;
+var roverMarker = null;
+var rPos = null; //ローバー表示ポジ 
+var lastrPos = null;
+var subPos = null;
+var lastSubPos = null;
+var jData = null;
+var sumRoll = 0;
+var rollCount = 0;
+const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
+var oriBar = "W";
+for (var i = 0; i < ori8.length; i++) {
+    oriBar += ("|........|........|" + ori8[i]);
+}
 function readJData(res) {
     $("#JSON").html(res);
     //Androidデータ読み出し
@@ -745,6 +730,8 @@ function checkedInfoWin() {
     rPathDraw(rPos);
 }
 
+//青アイコン位置決定
+var rMarkerArray = [];
 function rPathDraw(pos) {
     //位置設定アイコンを移動。
     if (!sDragend) {
@@ -784,7 +771,8 @@ function rPathDraw(pos) {
     rPoly.setMap(null);
     rPoly.setMap(map);
 }
-
+//ローバーアイコンのWindow
+var lastInfoWin = null;
 function attachMessage(marker, msg) {
     //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
     var infoWin = new google.maps.InfoWindow({
@@ -807,6 +795,33 @@ function attachMessage(marker, msg) {
         infoWin.close();
     });
 }
+
+var gapi;
+var peer;
+var peerdConn = null; // 接続したコネを保存しておく変数
+var helloAndroid = false;
+var lastAxes;
+var googleName;
+var googleID;
+var skyWayFolderID = "";
+var saveDirID = 0;
+//SkyWayに関するドキュメントとサンプルアプリ
+//https://nttcom.github.io/skyway/documentation.html
+// SkyWayのシグナリングサーバーへ接続する (APIキーを置き換える必要あり）
+const apiKey = '30fa6fbf-0cce-45c1-9ef6-2b6191881109';
+//Drive REST API JavaScript Quickstart
+//https://developers.google.com/drive/v2/web/quickstart/js
+// Your Client ID can be retrieved from your project in the Google
+// Developer Console, https://console.developers.google.com
+const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleusercontent.com';
+//google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
+//OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
+const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
+const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
+
+const boundary = '-------314159265358979323846';
+const delimiter = "\r\n--" + boundary + "\r\n";
+const close_delim = "\r\n--" + boundary + "--";
 
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
@@ -850,10 +865,6 @@ function handleAuthResult(authResult) {
         };
     }
 }
-//終了時
-$(window).on("beforeunload", function () {
-    peer.destroy();
-});
 
 function loadPeerId() {
     //SkyWayフォルダ検索
