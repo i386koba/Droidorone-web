@@ -43,7 +43,6 @@ function initialize() {
             map.setCenter(new google.maps.LatLng(35.8401073, 137.9581047));
         });
     }
-
     padInitialize();
     gamePadInitialize();
     uiInitialize();
