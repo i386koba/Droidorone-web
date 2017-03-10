@@ -55,18 +55,13 @@ var rPoly;
 var sPoly;
 var subPoly;
 var sMarker = null;
+var initInfoWin;
 var sPos = null; //現在地　設定ポジ
 var sDragend = false;
 var wPos = null; //ホイル回転推定ポジ
 var gpsAccCircle;
-var setFinCircle;
-var farstSetPos;
-var farstSetMaker;
-var reachInfoWin;
-var reachInfoWinClose = false;
 var checkInfoWin;
-var isDragging = false; //マウスドラグフラグ
-var initInfoWin;
+
 function mapInitialize() {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = {
@@ -129,15 +124,7 @@ function mapInitialize() {
             sDragend = false;
         });
     });
-    //自動運転移動場所設定　PATH
-    google.maps.event.addListener(map, 'click', function (ev) {
-        if (!sDragend && !$('#autoOff').prop('checked')) {
-            var setPos = ev.latLng;
-            var sPath = sPoly.getPath();
-            sPath.push(setPos);
-            sPoly.setMap(map);
-        }
-    });
+
 
     //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
     //https://developers.google.com/maps/documentation/javascript/reference#Circle
@@ -153,27 +140,9 @@ function mapInitialize() {
     // 中心点(google.maps.LatLng)
     gpsAccCircle.setRadius(100);
     gpsAccCircle.setMap(map);
-    farstSetMaker = new google.maps.Marker({});
-    reachInfoWin = new google.maps.InfoWindow({
-        content: '次の移動場所に行くならClose'
-                //'<button onClick="checkedInfoWin()"></button>'
-    });
-    
+
     checkInfoWin = new google.maps.InfoWindow({
         content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
-    });
-    
-    setFinCircle = new google.maps.Circle({
-        fillColor: '#00ff00', // 塗りつぶし色 緑
-        fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
-        strokeColor: '#00ff00', // 外周色
-        strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
-        strokeWeight: 1, // 外周太さ（ピクセル）
-        zIndex: 1 //
-    });
-
-    google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
-        reachInfoWinClose = true;
     });
 }
 
@@ -637,8 +606,41 @@ function readJData(res) {
 //    }
 }
 
+var farstSetPos;
+var farstSetMaker = null;
+var reachInfoWin;
+var reachInfoWinClose = false;
+var setFinCircle;
 //TODO: 自動操縦 (将来的にはAndroidで、）
 function autoPilot(rota) {
+    if (farstSetMaker === null) {
+        farstSetMaker = new google.maps.Marker({});
+        reachInfoWin = new google.maps.InfoWindow({
+            content: '次の移動場所に行くならClose'
+                    //'<button onClick="checkedInfoWin()"></button>'
+        });
+        setFinCircle = new google.maps.Circle({
+            fillColor: '#00ff00', // 塗りつぶし色 緑
+            fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
+            strokeColor: '#00ff00', // 外周色
+            strokeOpacity: 0.5, // 外周透過度（0: 透明 ⇔ 1:不透明）
+            strokeWeight: 1, // 外周太さ（ピクセル）
+            zIndex: 1 //
+        });
+
+        google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
+            reachInfoWinClose = true;
+        });
+        //自動運転移動場所設定　PATH
+        google.maps.event.addListener(map, 'click', function (ev) {
+            if (!sDragend && !$('#autoOff').prop('checked')) {
+                var setPos = ev.latLng;
+                var sPath = sPoly.getPath();
+                sPath.push(setPos);
+                sPoly.setMap(map);
+            }
+        });
+    }
     var setDis = 1.0; //自動運転停止、設定位置までの距離
     //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
     var sPath = sPoly.getPath();
