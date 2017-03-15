@@ -9,7 +9,7 @@ var map;
 function initialize() {
     //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
     var mapOptions = {
-        zoom: 18,
+        zoom: 22,
         //center: gPos,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         //mapTypeId: google.maps.MapTypeId.TERRAIN
@@ -435,7 +435,7 @@ function polyInitialize(pos) {
     });
     //エンコーダーは青マーカー
     encPoly = new google.maps.Polyline({
-        strokeColor: '#FF0000',
+        strokeColor: '#0000FF',
         strokeOpacity: 1.0,
         strokeWeight: 3,
         //icons: [{ 最後にしかマーカーされない
@@ -513,8 +513,6 @@ function polyInitialize(pos) {
 
 function setEndInfoWin() {
     setInfoWin.close();
-    setDrag = false;
-    encPos = setPos;
     //位置修正、最後のENCマーカー,パスを削除
     if (encMarkerArray.length !== 0) {
         var lastEncMaker = encMarkerArray.pop(encMarker);
@@ -522,7 +520,10 @@ function setEndInfoWin() {
         var ePath = encPoly.getPath();
         ePath.pop();
     }
-    encPathDraw(encPos);
+    encPathDraw(setPos);
+    map.setCenter(setPos);
+    encPos = setPos;
+    setDrag = false;
 }
 
 //エンコーダー軌跡　ポイントは緑のEncMaker
@@ -532,7 +533,6 @@ function encPathDraw(pos, rota) {
     if (!setDrag) {
         setMarker.setPosition(pos);
     }
-
     var ePath = encPoly.getPath();
     //GoogleMAP上の高度
     //gElevation(rPos);
@@ -599,6 +599,7 @@ var lastEncPos = null;
 var jData = null;
 var sumRota = 0;
 var rCount = 0;
+var sumDis = 0;
 const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
 var oriBar = "W";
 for (var i = 0; i < ori8.length; i++) {
@@ -644,7 +645,7 @@ function readJData(res) {
 
     //BuleTooth受信解析
     var btr = jData.btr;
-    if (btr !== "" && lastBtR !== btr) {
+    if (btr !== "") { //&& lastBtR !== btr) {
         lastBtR = btr;
         setBtTextArea(btr);
         var dis = btrDecode(btr);
@@ -662,11 +663,15 @@ function readJData(res) {
                 //setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
                 //距離が2m動いたらパス描画,データ記録
                 //if (distance > 2) {
-                encPathDraw(encPos, avgRota);
-                videoSnapShot(jData);
+                sumDis += dis;
+                if (sumDis > 2) {
+                    encPathDraw(encPos, avgRota);
+                    videoSnapShot(jData);
+                    sumDis = 0;
+                }
             }
             //地図中心　エンコーダ
-            if ($('#gpsOff').prop('checked')) {
+            if ($('#encCenter').prop('checked')) {
                 map.setCenter(encPos);
             }
             //Encマーカー　青
@@ -692,7 +697,7 @@ function readJData(res) {
     } else {
         var gpsPos = new google.maps.LatLng(jData.lat, jData.lng);
         //地図中心　GPS
-        if ($('#gpsOn').prop('checked')) {
+        if ($('#gpsCenter').prop('checked')) {
             map.setCenter(gpsPos);
         }
         //初回
