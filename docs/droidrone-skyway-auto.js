@@ -638,79 +638,8 @@ function readJData(res) {
     //BuleTooth受信解析
     var btr = jData.btr;
     if (btr !== "" && lastBtR !== btr) {
-        setBtTextArea(btr);
+        btrDecode(btr);
         lastBtR = btr;
-        //（RCバッテリー電圧）
-        if (btr.substr(0, 4) === "BAT:") {
-            var a0Vol = btr.substr(4) * 0.0112; //(10 / 1024); 分圧1・2ですが実測値より計算
-            $("#RcBatVol").html(a0Vol.toFixed(1) + "V");
-            //ローバーホイル回転センサー受信
-        }
-        //（タイヤ回転センサ）
-        if (btr.substr(0, 4) === "RPS:" && btr.substr(4) !== '0' && encPos !== null) {
-            //タイヤ一回転カウントでの距離
-            var countM = Number($("#countM").val()) * 0.001;
-            //ホイルカウントから1秒間の距離を計算
-            var dis = Number(btr.substr(4)) * countM;
-            //Google Maps JavaScript API V3 ジオメトリ ライブラリ //http://gm-api.net/geometry.html
-            //computeOffset() を使用すると、特定の方向、出発地、移動距離（メートル単位）から、目的地の座標を計算できます。
-            //https://developers.google.com/maps/documentation/javascript/3.exp/reference#spherical
-            var avgRoll = jData.rota;
-            if (rollCount !== 0) {
-                avgRoll = sumRoll / rollCount;
-                sumRoll = 0;
-                rollCount = 0;
-            }
-            var encPos = google.maps.geometry.spherical.computeOffset(encPos, dis, avgRoll);
-            //地図中心　エンコーダ
-            if ($('#gpsOff').prop('checked')) {
-                map.setCenter(encPos);
-            }
-            //Encマーカー　青
-            if (encMarker !== null) {
-                encMarker.setMap(null);
-            }
-            encMarker = new google.maps.Marker({
-                position: encPos,
-                icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
-                    //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
-                    // 矢印中心が先っぽだったのでPath作った。
-                    scale: 3,
-                    strokeColor: '#0000FF',
-                    rotation: jData.rota
-                },
-                map: map,
-                zIndex: 2// 重なりの優先値(z-index)
-            });
-            //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
-            var distance = google.maps.geometry.spherical.computeDistanceBetween(encPos, lastEncPos);
-            //距離が2m動いたらパス描画,データ記録
-            if (distance > 2) {
-                lastEncPos = encPos;
-                encPathDraw(encPos);
-                setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
-                //video画面をGD保存 $('#android-video');
-                //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-                $('#tmp-canvas').attr("width", $('#android-video').get(0).videoWidth);
-                $('#tmp-canvas').attr("height", $('#android-video').get(0).videoHeight);
-                //http://www.html5.jp/tag/elements/video.html
-                //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-                var tmpCanvas = $('#tmp-canvas').get(0);
-                var tmpCtx = tmpCanvas.getContext("2d");
-                tmpCtx.drawImage($('#android-video').get(0), 0, 0);
-                //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-                var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
-                var rJson = JSON.stringify(jData);
-                //記録用GDフォルダ作製
-                if (jData !== null) {
-                    if (saveDirID === 0) {
-                        gMkdir(jData.time, url, rJson);
-                    } else {
-                        saveJpegM(jData.time + ".jpg", url, rJson);
-                    }
-                }
-            }
-        }
     }
     //GPS受信できない場合
     if (jData.lat === 'NoData') {
@@ -755,7 +684,8 @@ function readJData(res) {
             }
         }
     }
-
+    //GPSのNMEAフォーマッ
+    nmeaAna();
     //TODO: 自動操縦 (将来的にはAndroidで、）
     if (!$('#autoOff').prop('checked')) {
         autoPilot(jData.rota);
@@ -773,7 +703,80 @@ function readJData(res) {
 //        vRotate = 0;
 //    }
 }
-
+function  btrDecode(btr) {
+    setBtTextArea(btr);
+    //（RCバッテリー電圧）
+    if (btr.substr(0, 4) === "BAT:") {
+        var a0Vol = btr.substr(4) * 0.0112; //(10 / 1024); 分圧1・2ですが実測値より計算
+        $("#RcBatVol").html(a0Vol.toFixed(1) + "V");
+        //ローバーホイル回転センサー受信
+    }
+    //（タイヤ回転センサ）
+    if (btr.substr(0, 4) === "RPS:" && btr.substr(4) !== '0' && encPos !== null) {
+        //タイヤ一回転カウントでの距離
+        var countM = Number($("#countM").val()) * 0.001;
+        //ホイルカウントから1秒間の距離を計算
+        var dis = Number(btr.substr(4)) * countM;
+        //Google Maps JavaScript API V3 ジオメトリ ライブラリ //http://gm-api.net/geometry.html
+        //computeOffset() を使用すると、特定の方向、出発地、移動距離（メートル単位）から、目的地の座標を計算できます。
+        //https://developers.google.com/maps/documentation/javascript/3.exp/reference#spherical
+        var avgRoll = jData.rota;
+        if (rollCount !== 0) {
+            avgRoll = sumRoll / rollCount;
+            sumRoll = 0;
+            rollCount = 0;
+        }
+        var encPos = google.maps.geometry.spherical.computeOffset(encPos, dis, avgRoll);
+        //地図中心　エンコーダ
+        if ($('#gpsOff').prop('checked')) {
+            map.setCenter(encPos);
+        }
+        //Encマーカー　青
+        if (encMarker !== null) {
+            encMarker.setMap(null);
+        }
+        encMarker = new google.maps.Marker({
+            position: encPos,
+            icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
+                //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
+                // 矢印中心が先っぽだったのでPath作った。
+                scale: 3,
+                strokeColor: '#0000FF',
+                rotation: jData.rota
+            },
+            map: map,
+            zIndex: 2// 重なりの優先値(z-index)
+        });
+        //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
+        var distance = google.maps.geometry.spherical.computeDistanceBetween(encPos, lastEncPos);
+        //距離が2m動いたらパス描画,データ記録
+        if (distance > 2) {
+            lastEncPos = encPos;
+            encPathDraw(encPos);
+            setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
+            //video画面をGD保存 $('#android-video');
+            //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+            $('#tmp-canvas').attr("width", $('#android-video').get(0).videoWidth);
+            $('#tmp-canvas').attr("height", $('#android-video').get(0).videoHeight);
+            //http://www.html5.jp/tag/elements/video.html
+            //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+            var tmpCanvas = $('#tmp-canvas').get(0);
+            var tmpCtx = tmpCanvas.getContext("2d");
+            tmpCtx.drawImage($('#android-video').get(0), 0, 0);
+            //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+            var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
+            var rJson = JSON.stringify(jData);
+            //記録用GDフォルダ作製
+            if (jData !== null) {
+                if (saveDirID === 0) {
+                    gMkdir(jData.time, url, rJson);
+                } else {
+                    saveJpegM(jData.time + ".jpg", url, rJson);
+                }
+            }
+        }
+    }
+}
 var sPoly;
 var farstSetPos;
 var farstSetMaker = null;
