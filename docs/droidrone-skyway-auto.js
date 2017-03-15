@@ -408,6 +408,7 @@ function setBtTextArea(str) {
     $("#btMessages").val(str + "\n" + $("#btMessages").val());
     $("#btMessages").scrollTop();
 }
+
 var encPos = null;
 var gpsPoly; //GPSポリライン
 var encPoly; //ホイル回転推定ポリライン
@@ -600,6 +601,7 @@ var jData = null;
 var sumRota = 0;
 var rCount = 0;
 var sumDis = 0;
+var recDis = 0;
 const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
 var oriBar = "W";
 for (var i = 0; i < ori8.length; i++) {
@@ -666,7 +668,11 @@ function readJData(res) {
                 sumDis += dis;
                 if (sumDis > 2) {
                     encPathDraw(encPos, avgRota);
-                    videoSnapShot(jData);
+                    recDis += sumDis;
+                    if (recDis > 20) {
+                        videoSnapShot(jData);
+                        //終了時20m以内ならGdriveから削除か
+                    }
                     sumDis = 0;
                 }
             }
@@ -754,11 +760,12 @@ function readJData(res) {
 //        vRotate = 0;
 //    }
 }
+
 function  btrDecode(btr) {
-    //（RCバッテリー電圧）
     var dis = 0;
+    //（RCバッテリー電圧）
     if (btr.substr(0, 4) === "BAT:") {
-        var a0Vol = btr.substr(4) * 0.0112; //(10 / 1024); 分圧1・2ですが実測値より計算
+        var a0Vol = btr.substr(4) * 0.0112; //(10 / 1024); 分圧1/2ですが実測値より計算
         $("#RcBatVol").html(a0Vol.toFixed(1) + "V");
         //ローバーホイル回転センサー受信
     }
