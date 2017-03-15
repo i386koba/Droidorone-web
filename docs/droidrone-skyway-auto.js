@@ -411,11 +411,11 @@ function setBtTextArea(str) {
 var encPos = null;
 var gpsPoly; //GPSポリライン
 var encPoly; //ホイル回転推定ポリライン
-var sMarker = null; //現在地修正マーカー
-var initInfoWin; //位置修正出来ますよインフォ
+var setMarker = null; //現在地修正マーカー
+var startInfoWin; //位置修正出来ますよインフォ
 var setPos = null; //位置修正ポジ
-var sDragend = false; //位置修正中
-var checkInfoWin; //位置修正決定インフォ
+var setDrag = false; //位置修正中
+var setInfoWin; //位置修正決定インフォ
 var gpsAccCircle = null; //GPS精度 距離
 var encMarkerArray = [];
 
@@ -474,7 +474,7 @@ function polyInitialize(pos) {
         map: map
     });
     //現在位置指定マーカー　青丸　（ポリラインの終端。）
-    sMarker = new google.maps.Marker({
+    setMarker = new google.maps.Marker({
         icon: {
             path: google.maps.SymbolPath.CIRCLE,
             scale: 3,
@@ -486,33 +486,34 @@ function polyInitialize(pos) {
         zIndex: 3// 重りの優先値(z-index)
     });
     //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
-    initInfoWin = new google.maps.InfoWindow({
+    //google.maps.InfoWindow class
+    //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
+    startInfoWin = new google.maps.InfoWindow({
         content: '青丸アイコンを現在地にドラッグしてください。'
     });
-    initInfoWin.open(map, sMarker);
+    startInfoWin.open(map, sMarker);
 
-    ////マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
+    setInfoWin = new google.maps.InfoWindow({
+        content: '<button onClick="setEndInfoWin()">現在位置設定</button>'
+    });
+    //マウスによる位置修正 http://orange-factory.com/dnf/googlemap_v3.html
     // マーカーのドロップ（ドラッグ終了）時のイベント
-    google.maps.event.addListener(sMarker, 'dragend', function (ev) {
-        sDragend = true;
+    google.maps.event.addListener(setMarker, 'dragend', function (ev) {
+        startInfoWin.close();
+        setDrag = true;
         // イベントの引数evの、プロパティ.latLngが緯度経度。
         setPos = ev.latLng;
-        initInfoWin.close();
-        checkInfoWin.open(map, sMarker);
-        //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
-        google.maps.event.addListener(checkInfoWin, 'closeclick', function () {
-            sDragend = false;
+        setInfoWin.open(map, setMarker);
+        //移動のキャンセル
+        google.maps.event.addListener(setInfoWin, 'closeclick', function () {
+            setDrag = false;
         });
-    });
-
-    checkInfoWin = new google.maps.InfoWindow({
-        content: '<button onClick="checkedInfoWin()">現在位置設定</button>'
     });
 }
 
-function checkedInfoWin() {
-    checkInfoWin.close();
-    sDragend = false;
+function setEndInfoWin() {
+    setInfoWin.close();
+    setDrag = false;
     encPos = setPos;
     encPathDraw(encPos);
 }
@@ -520,11 +521,11 @@ function checkedInfoWin() {
 //エンコーダー軌跡　ポイントは緑のEncMaker
 //（TODO:位置修正対応（パスを修正））
 function encPathDraw(pos, rota) {
-    //位置設定アイコンを移動中。
-    if (!sDragend) {
-        sMarker.setPosition(pos);
+    //マーカーのドロップ（ドラッグ終了）時
+    if (!setDrag) {
+        setMarker.setPosition(pos);
     }
- 
+
     var ePath = encPoly.getPath();
     //GoogleMAP上の高度
     //gElevation(rPos);
@@ -678,7 +679,6 @@ function readJData(res) {
                 map: map,
                 zIndex: 2// 重なりの優先値(z-index)
             });
-
         }
     }
     //`スマフォGPS受信
@@ -714,7 +714,7 @@ function readJData(res) {
             //var distance = google.maps.geometry.spherical.computeDistanceBetween(gpsPos, lastGpsPos);
             //距離が10m動いたらパス描画,データ記録
             //if (distance > 10) {
-            if(lastGpsPos !== gpsPos ) {
+            if (lastGpsPos !== gpsPos) {
                 lastGpsPos = gpsPos;
                 var gPath = gpsPoly.getPath();
                 //GoogleMAP上の高度
@@ -761,7 +761,6 @@ function  btrDecode(btr) {
         //Google Maps JavaScript API V3 ジオメトリ ライブラリ //http://gm-api.net/geometry.html
         //computeOffset() を使用すると、特定の方向、出発地、移動距離（メートル単位）から、目的地の座標を計算できます。
         //https://developers.google.com/maps/documentation/javascript/3.exp/reference#spherical
-
     }
     return dis;
 }
@@ -790,32 +789,33 @@ function videoSnapShot(jData) {
 }
 //GPSモジュール　NMEAフォーマット　http://www.hiramine.com/physicalcomputing/general/gps_nmeaformat.html
 function nmeaPosDecode(str) {
-    var lat,lng;
+    var lat, lng;
     return new google.maps.LatLng(lat, lng);
 }
-var sPoly;
-var farstSetPos;
-var farstSetMaker = null;
+
+var autoPoly;
+var autoSetPos;
+var autoSetMaker = null;
 var reachInfoWin;
 var reachInfoWinClose = false;
-var setFinCircle;
-//TODO: 自動操縦 (将来的にはAndroidで、）
+var autoFinCircle;
+//TODO: 自動操縦 (将来的にはAndroidでやるべきだろう、LTE通信が途切れても移動するため）
 function autoPilot(rota) {
-    if (farstSetMaker === null) {
+    if (autoSetMaker === null) {
         //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#PolylineOptions
-        sPoly = new google.maps.Polyline({
+        autoPoly = new google.maps.Polyline({
             strokeColor: '#00FFFF',
             strokeOpacity: 1.0,
             strokeWeight: 2,
             editable: true,
             zIndex: 1// 重なりの優先値(z-index)
         });
-        farstSetMaker = new google.maps.Marker({});
+        autoSetMaker = new google.maps.Marker({});
         reachInfoWin = new google.maps.InfoWindow({
             content: '次の移動場所に行くならClose'
                     //'<button onClick="checkedInfoWin()"></button>'
         });
-        setFinCircle = new google.maps.Circle({
+        autoFinCircle = new google.maps.Circle({
             fillColor: '#00ff00', // 塗りつぶし色 緑
             fillOpacity: 0.2, // 塗りつぶし透過度（0: 透明 ⇔ 1:不透明）
             strokeColor: '#00ff00', // 外周色
@@ -828,32 +828,31 @@ function autoPilot(rota) {
         });
         //自動運転移動場所設定　PATH
         google.maps.event.addListener(map, 'click', function (ev) {
-            if (!sDragend && !$('#autoOff').prop('checked')) {
-                var setPos = ev.latLng;
-                var sPath = sPoly.getPath();
-                sPath.push(setPos);
-                sPoly.setMap(map);
+            if (!setDrag && !$('#autoOff').prop('checked')) {
+                var autoPath = autoPoly.getPath();
+                autoPath.push(ev.latLng);
+                autoPoly.setMap(map);
             }
         });
     }
     var setDis = 1.0; //自動運転停止、設定位置までの距離
     //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
-    var sPath = sPoly.getPath();
-    var num = sPath.getLength();
+    var autoPath = autoPoly.getPath();
+    var num = autoPath.getLength();
     if (num > 0) {
-        farstSetPos = sPath.getAt(0);
-        farstSetMaker.setMap(null);
-        farstSetMaker.setPosition(farstSetPos);
-        farstSetMaker.setMap(map);
+        autoSetPos = autoPath.getAt(0);
+        autoSetMaker.setMap(null);
+        autoSetMaker.setPosition(autoSetPos);
+        autoSetMaker.setMap(map);
         //前回設定終了円を除去
-        setFinCircle.setMap(null);
+        autoFinCircle.setMap(null);
         //半径を指定した円を地図上の中心点に描く http://www.nanchatte.com/map/circle-v3.html
-        setFinCircle.setCenter(farstSetPos); // 中心点(google.maps.LatLng)
-        setFinCircle.setRadius(setDis);
-        setFinCircle.setMap(map);
+        autoFinCircle.setCenter(autoSetPos); // 中心点(google.maps.LatLng)
+        autoFinCircle.setRadius(setDis);
+        autoFinCircle.setMap(map);
         //https://developers.google.com/maps/documentation/javascript/geometry?hl=ja#Navigation
-        var heading = google.maps.geometry.spherical.computeHeading(encPos, farstSetPos);
-        var distance = google.maps.geometry.spherical.computeDistanceBetween(encPos, farstSetPos);
+        var heading = google.maps.geometry.spherical.computeHeading(encPos, autoSetPos);
+        var distance = google.maps.geometry.spherical.computeDistanceBetween(encPos, autoSetPos);
         if (heading < 0) { //マイナス角度修正
             heading += 360;
         }
@@ -862,10 +861,10 @@ function autoPilot(rota) {
         if (distance < setDis) {
             commandStr = "BTC:15001500m"; //停止
             if ($('#selfOn').prop('checked') && !reachInfoWinClose) {
-                reachInfoWin.open(map, farstSetMaker);
+                reachInfoWin.open(map, autoSetMaker);
             } else {
-                farstSetMaker.setMap(null);
-                sPath.removeAt(0);
+                autoSetMaker.setMap(null);
+                autoPath.removeAt(0);
                 reachInfoWinClose = false;
             }
         } else {
