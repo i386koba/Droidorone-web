@@ -62,8 +62,8 @@ var isDragging = false;
 function padInitialize() {
     //マウスによる2chプロポ操作　Canvas上の矢印をドラッグしてXY座標入力。
     //マウスを離すと0点に戻るようにする。
-    //pCanvas = document.getElementById("padCanvas");  
-    //canvas をjQueryで使う。 http://tnomura9.exblog.jp/12624562/ 
+    //pCanvas = document.getElementById("padCanvas");
+    //canvas をjQueryで使う。 http://tnomura9.exblog.jp/12624562/
     pCanvas = $("#padCanvas").get(0);
     padg = pCanvas.getContext("2d");
     //mCanvas = document.getElementById("mouseCanvas");
@@ -264,7 +264,7 @@ function gamePadInitialize() {
         });
         // ゲームパッドの接続を解除すると実行されるイベント
         window.addEventListener("gamepaddisconnected", function (e) {
-            //$(window).on("gamepaddisconnected", function (e) {      
+            //$(window).on("gamepaddisconnected", function (e) {
             console.log("ゲームパッドの接続が解除された");
             console.log(e.gamepad);
             $("#commandStat").val("ゲームパッドの接続が解除されました。");
@@ -294,7 +294,7 @@ function gamePadListen(gamePadID, gamePadInterval) {
         //http://www.w3.org/TR/gamepad/#remapping
         //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
         //左スティック　左右　axes[0] (-1.0 ~ +1.0)
-        //左スティック　上下　axes[1] 
+        //左スティック　上下　axes[1]
         //右スティック　左右　axes[2]
         //右スティック　上下　axes[3]
         //console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
@@ -320,7 +320,7 @@ function gamePadListen(gamePadID, gamePadInterval) {
 }
 
 function uiInitialize() {
-    //Camera servo control　
+    //Camera servo control
     //レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
     //Xカメラ操作
     $("#xCamera").on('input', function () {
@@ -517,15 +517,14 @@ function checkedInfoWin() {
     encPathDraw(encPos);
 }
 
-//エンコーダー軌跡　緑アイコン（TODO:位置修正対応（パスを修正））
-function encPathDraw(pos) {
-    //位置設定アイコンを移動。
+//エンコーダー軌跡　ポイントは緑のEncMaker
+//（TODO:位置修正対応（パスを修正））
+function encPathDraw(pos, rota) {
+    //位置設定アイコンを移動中。
     if (!sDragend) {
         sMarker.setPosition(pos);
     }
-    if (jData === null) {
-        return;
-    }
+ 
     var ePath = encPoly.getPath();
     //GoogleMAP上の高度
     //gElevation(rPos);
@@ -536,7 +535,7 @@ function encPathDraw(pos) {
         icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
             scale: 3,
             strokeColor: '#00FF00',
-            rotation: jData.rota
+            rotation: rota
         },
         map: map,
         zIndex: 1// 重なりの優先値(z-index)
@@ -549,7 +548,7 @@ function encPathDraw(pos) {
             // '<img src="' + imgfile + '" width="100">'
             + ', ' + time.toLocaleString() + '<br />'
             + ',GPS高度:' + jData.alti + 'm'
-            + ',方向:' + jData.rota + '°' + ',pitch ' + jData.pitch + '°'
+            + ',方向:' + rota + '°' + ',pitch ' + jData.pitch + '°'
             + ',roll:' + jData.roll + '°'
             + '<br>btr:' + jData.btr + '</div>';
     //関数で呼ばないとInfowindowが重なる
@@ -590,8 +589,8 @@ var gpsAccCount = 0;
 var lastGpsPos = null;
 var lastEncPos = null;
 var jData = null;
-var sumRoll = 0;
-var rollCount = 0;
+var sumRota = 0;
+var rCount = 0;
 const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
 var oriBar = "W";
 for (var i = 0; i < ori8.length; i++) {
@@ -615,8 +614,8 @@ function readJData(res) {
             + ', pitch: ' + jData.pitch + '°'
             + ', roll: ' + jData.roll + '°');
     //方向平均値用
-    sumRoll += jData.roll;
-    rollCount++;
+    sumRota += jData.rota;
+    rCount++;
     //方角表示
     $("#orient").html(("00" + jData.rota).substr(-3) + ":" + oriBar.substr(Math.floor(jData.rota / 2), 90).substr(25, 45));
     //Android　バッテリ情報
@@ -635,13 +634,54 @@ function readJData(res) {
             }
         }
     }
+
     //BuleTooth受信解析
     var btr = jData.btr;
     if (btr !== "" && lastBtR !== btr) {
-        btrDecode(btr);
         lastBtR = btr;
+        setBtTextArea(btr);
+        var dis = btrDecode(btr);
+        if (encPos !== null) {
+            if (dis !== 0) {
+                var avgRota = jData.rota;
+                if (rCount !== 0) {
+                    avgRota = sumRota / rCount;
+                    sumRota = 0;
+                    rCount = 0;
+                }
+                encPos = google.maps.geometry.spherical.computeOffset(encPos, dis, avgRota);
+                //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
+                //var distance = google.maps.geometry.spherical.computeDistanceBetween(encPos, lastEncPos);
+                //setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
+                //距離が2m動いたらパス描画,データ記録
+                //if (distance > 2) {
+                encPathDraw(encPos, avgRota);
+                videoSnapShot(jData);
+            }
+            //地図中心　エンコーダ
+            if ($('#gpsOff').prop('checked')) {
+                map.setCenter(encPos);
+            }
+            //Encマーカー　青
+            if (encMarker !== null) {
+                encMarker.setMap(null);
+            }
+            encMarker = new google.maps.Marker({
+                position: encPos,
+                icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
+                    //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
+                    // 矢印中心が先っぽだけだったのでPath作った。
+                    scale: 3,
+                    strokeColor: '#0000FF',
+                    rotation: jData.rota
+                },
+                map: map,
+                zIndex: 2// 重なりの優先値(z-index)
+            });
+
+        }
     }
-    //GPS受信できない場合
+    //`スマフォGPS受信
     if (jData.lat === 'NoData') {
         $("#orient").html("GPSが受信できません");
     } else {
@@ -668,12 +708,13 @@ function readJData(res) {
             gpsAccCircle.setMap(map);
         }
         gpsAccCount--;
-
-        //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
+        //GPS精度が10m以内ならパス描画
         if (jData.accuracy < 10) {
-            var distance = google.maps.geometry.spherical.computeDistanceBetween(gpsPos, lastGpsPos);
+            //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
+            //var distance = google.maps.geometry.spherical.computeDistanceBetween(gpsPos, lastGpsPos);
             //距離が10m動いたらパス描画,データ記録
-            if (distance > 10) {
+            //if (distance > 10) {
+            if(lastGpsPos !== gpsPos ) {
                 lastGpsPos = gpsPos;
                 var gPath = gpsPoly.getPath();
                 //GoogleMAP上の高度
@@ -684,14 +725,14 @@ function readJData(res) {
             }
         }
     }
-    //GPSのNMEAフォーマッ
-    nmeaAna();
+    //GPSモジュール　NMEAフォーマット　http://www.hiramine.com/physicalcomputing/general/gps_nmeaformat.html
+    nmeaPos = nmeaPosDecode(jData.nmea);
     //TODO: 自動操縦 (将来的にはAndroidで、）
     if (!$('#autoOff').prop('checked')) {
         autoPilot(jData.rota);
     }
 
-//Videoの向きを判断して回転 
+//Videoの向きを判断して回転
 //2016.11.15 Android縦専用にした。
 //    if (vRotate === 0 && video.get(0).videoHeight > video.get(0).videoWidth ){
 //        video.css("-webkit-transform", "rotate(270deg)");
@@ -704,8 +745,8 @@ function readJData(res) {
 //    }
 }
 function  btrDecode(btr) {
-    setBtTextArea(btr);
     //（RCバッテリー電圧）
+    var dis = 0;
     if (btr.substr(0, 4) === "BAT:") {
         var a0Vol = btr.substr(4) * 0.0112; //(10 / 1024); 分圧1・2ですが実測値より計算
         $("#RcBatVol").html(a0Vol.toFixed(1) + "V");
@@ -716,66 +757,41 @@ function  btrDecode(btr) {
         //タイヤ一回転カウントでの距離
         var countM = Number($("#countM").val()) * 0.001;
         //ホイルカウントから1秒間の距離を計算
-        var dis = Number(btr.substr(4)) * countM;
+        dis = Number(btr.substr(4)) * countM;
         //Google Maps JavaScript API V3 ジオメトリ ライブラリ //http://gm-api.net/geometry.html
         //computeOffset() を使用すると、特定の方向、出発地、移動距離（メートル単位）から、目的地の座標を計算できます。
         //https://developers.google.com/maps/documentation/javascript/3.exp/reference#spherical
-        var avgRoll = jData.rota;
-        if (rollCount !== 0) {
-            avgRoll = sumRoll / rollCount;
-            sumRoll = 0;
-            rollCount = 0;
-        }
-        var encPos = google.maps.geometry.spherical.computeOffset(encPos, dis, avgRoll);
-        //地図中心　エンコーダ
-        if ($('#gpsOff').prop('checked')) {
-            map.setCenter(encPos);
-        }
-        //Encマーカー　青
-        if (encMarker !== null) {
-            encMarker.setMap(null);
-        }
-        encMarker = new google.maps.Marker({
-            position: encPos,
-            icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
-                //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
-                // 矢印中心が先っぽだったのでPath作った。
-                scale: 3,
-                strokeColor: '#0000FF',
-                rotation: jData.rota
-            },
-            map: map,
-            zIndex: 2// 重なりの優先値(z-index)
-        });
-        //地図上の２点間の距離を求める http://www.nanchatte.com/map/computeDistance.html
-        var distance = google.maps.geometry.spherical.computeDistanceBetween(encPos, lastEncPos);
-        //距離が2m動いたらパス描画,データ記録
-        if (distance > 2) {
-            lastEncPos = encPos;
-            encPathDraw(encPos);
-            setBtTextArea("距離" + distance.toFixed(2) + "m," + btr + ",rot:" + jData.rota + "°.");
-            //video画面をGD保存 $('#android-video');
-            //attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
-            $('#tmp-canvas').attr("width", $('#android-video').get(0).videoWidth);
-            $('#tmp-canvas').attr("height", $('#android-video').get(0).videoHeight);
-            //http://www.html5.jp/tag/elements/video.html
-            //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
-            var tmpCanvas = $('#tmp-canvas').get(0);
-            var tmpCtx = tmpCanvas.getContext("2d");
-            tmpCtx.drawImage($('#android-video').get(0), 0, 0);
-            //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
-            var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
-            var rJson = JSON.stringify(jData);
-            //記録用GDフォルダ作製
-            if (jData !== null) {
-                if (saveDirID === 0) {
-                    gMkdir(jData.time, url, rJson);
-                } else {
-                    saveJpegM(jData.time + ".jpg", url, rJson);
-                }
-            }
+
+    }
+    return dis;
+}
+
+function videoSnapShot(jData) {
+//video画面をGD保存 $('#android-video');
+//attr(key,value) http://semooh.jp/jquery/api/attributes/attr/key%2Cvalue/
+    $('#tmp-canvas').attr("width", $('#android-video').get(0).videoWidth);
+    $('#tmp-canvas').attr("height", $('#android-video').get(0).videoHeight);
+    //http://www.html5.jp/tag/elements/video.html
+    //videoの任意のフレームをcanvasに描画するメモ　http://d.hatena.ne.jp/favril/20100225/1267099197
+    var tmpCanvas = $('#tmp-canvas').get(0);
+    var tmpCtx = tmpCanvas.getContext("2d");
+    tmpCtx.drawImage($('#android-video').get(0), 0, 0);
+    //第2引数は品質レベルで、0.0~1.0の間の数値です。高いほど高品質。
+    var url = tmpCanvas.toDataURL("image/jpeg", 0.5);
+    var rJson = JSON.stringify(jData);
+    //記録用GDフォルダ作製
+    if (jData !== null) {
+        if (saveDirID === 0) {
+            gMkdir(jData.time, url, rJson);
+        } else {
+            saveJpegM(jData.time + ".jpg", url, rJson);
         }
     }
+}
+//GPSモジュール　NMEAフォーマット　http://www.hiramine.com/physicalcomputing/general/gps_nmeaformat.html
+function nmeaPosDecode(str) {
+    var lat,lng;
+    return new google.maps.LatLng(lat, lng);
 }
 var sPoly;
 var farstSetPos;
@@ -807,7 +823,6 @@ function autoPilot(rota) {
             strokeWeight: 1, // 外周太さ（ピクセル）
             zIndex: 1 //
         });
-
         google.maps.event.addListener(reachInfoWin, 'closeclick', function () {
             reachInfoWinClose = true;
         });
@@ -915,12 +930,11 @@ const CLIENT_ID = '233745234921-nv641kj8arbantub6qde76ld1l2pp4jf.apps.googleuser
 //google api authorizeでの複数スコープ指定+α http://qiita.com/anyworks@github/items/bdba3cd8f17e1d6cc8b3
 //OAuth 2.0 Scopes for Google APIs https://developers.google.com/identity/protocols/googlescopes
 const SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/userinfo.profile'];
-const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk';//\\i386koba\SkyWayRC\MapLink
+const MapLinkGDFolderID = '0ByPgjiFncZu1a3B1dEdLVVJzOFk'; //\\i386koba\SkyWayRC\MapLink
 
 const boundary = '-------314159265358979323846';
 const delimiter = "\r\n--" + boundary + "\r\n";
 const close_delim = "\r\n--" + boundary + "--";
-
 // Initiate auth flow in response to user clicking authorize button.
 function handleAuth() {
     //既存のPeer再接続（Android再起動の場合）
@@ -954,10 +968,10 @@ function handleAuth() {
 function handleAuthResult(authResult) {
     var authButton = document.getElementById('authorizeButton');
     if (authResult && !authResult.error) {
-        // Access token has been successfully retrieved, requests can be sent to the API.
+// Access token has been successfully retrieved, requests can be sent to the API.
         gapi.client.load('drive', 'v2', loadPeerId);
     } else {
-        // No access token could be retrieved, show the button to start the authorization flow.
+// No access token could be retrieved, show the button to start the authorization flow.
         authButton.onclick = function () {
             gapi.auth.authorize({'client_id': CLIENT_ID, 'scope': SCOPES.join(" "), 'immediate': false}, handleAuthResult);
         };
@@ -965,7 +979,7 @@ function handleAuthResult(authResult) {
 }
 
 function loadPeerId() {
-    //SkyWayフォルダ検索
+//SkyWayフォルダ検索
     var SKYWAYRC_DIR = "SkyWayRC";
     var SKYWAY_ANDROID_ID = "SkyWayAndroid.id";
     //Drive REST API JavaScript Quickstart https://developers.google.com/drive/v2/web/quickstart/js
@@ -1016,7 +1030,6 @@ function loadPeerId() {
                         //ボタンを無効にする
                         $("#authorizeButton").prop("disabled", true);
                     });
-
                 } else {
                     setMsgTextArea("SkyWayAndroid.id not found:");
                 }
@@ -1105,7 +1118,7 @@ function gMkdir(name, url, data) {
 //drive v2 でファイルupload http://qiita.com/anyworks@github/items/98ffc5b2cac77d440a1e
 //いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
 //JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
-//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c  
+//Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c
 function saveJpegM(name, url, data) {
     var contentType = 'image/jpeg'; // 'application/octet-stream';
     var metadata = {
@@ -1122,7 +1135,6 @@ function saveJpegM(name, url, data) {
             'Content-Type: ' + contentType + '\r\n' +
             'Content-Transfer-Encoding: base64\r\n' +
             '\r\n' + binaryData + close_delim;
-
     var request = gapi.client.request({
         'path': '/upload/drive/v2/files',
         'method': 'POST',
@@ -1130,7 +1142,6 @@ function saveJpegM(name, url, data) {
         'headers': {'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'},
         'body': multipartRequestBody
     });
-
     request.execute(function (file) {
         console.log('image/jpeg');
         console.log(file);
@@ -1139,20 +1150,18 @@ function saveJpegM(name, url, data) {
 }
 
 function peerStart(destPeerId) {
-    //peer接続されていたら無効
+//peer接続されていたら無効
     if (helloAndroid) {
         setMsgTextArea('Peer is already　Open.');
         return;
     }
-    // 相手への接続を開始する
+// 相手への接続を開始する
     peerdConn = peer.connect(destPeerId);
     //, { serialization: 'none', metadata: {message: 'hi i want to chat with you!'} });
     setMsgTextArea('Try connect: ' + destPeerId);
-
     peerdConn.on('error', function (err) {
         setMsgTextArea('conn-err: ' + err);
     });
-
     // 接続が完了した場合のイベントの設定
     peerdConn.on("open", function () {
         setMsgTextArea('Open　connect: ' + peerdConn.peer);
@@ -1167,7 +1176,6 @@ function peerStart(destPeerId) {
             }
         });
     });
-
     peer.on('call', function (call) {
         // - 相手のIDはCallオブジェクトのpeerプロパティに存在する
         setMsgTextArea('Call from : ' + call.peer);
@@ -1179,7 +1187,7 @@ function peerStart(destPeerId) {
             // - video要素に表示できる形にするため変換している
             var url = window.URL.createObjectURL(stream);
             setMsgTextArea('stream url: ' + url);
-            // video要素のsrcに設定することで、映像を表示する 	 	
+            // video要素のsrcに設定することで、映像を表示する
             $('#android-video').prop('src', url);
         });
         call.on('error', function (err) {
@@ -1243,11 +1251,11 @@ function getSnap() {
     } else {
         saveJpegM(new Date().getTime() + ".jpg", img.src, $("#JSON").text());
     }
-    //mapLink("test", "disTest");
+//mapLink("test", "disTest");
     img.onload = function () {
         img.width = videoWidth / 2;
         img.height = videoHeight / 2;
-        //縦長なら回転 
+        //縦長なら回転
         //if (videoWidth < videoHeight) {
         //tmpCanvas.css("-webkit-transform", "rotate(270deg)");
         //↑表示Canvasは回転するがキャプチャIMGは回転しない
