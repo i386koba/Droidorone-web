@@ -491,7 +491,7 @@ function polyInitialize(pos) {
     startInfoWin = new google.maps.InfoWindow({
         content: '青丸アイコンを現在地にドラッグしてください。'
     });
-    startInfoWin.open(map, sMarker);
+    startInfoWin.open(map, setMarker);
 
     setInfoWin = new google.maps.InfoWindow({
         content: '<button onClick="setEndInfoWin()">現在位置設定</button>'
@@ -515,13 +515,20 @@ function setEndInfoWin() {
     setInfoWin.close();
     setDrag = false;
     encPos = setPos;
+    //位置修正、最後のENCマーカー,パスを削除
+    if (encMarkerArray.length !== 0) {
+        var lastEncMaker = encMarkerArray.pop(encMarker);
+        lastEncMaker.setMap(null);
+        var ePath = encPoly.getPath();
+        ePath.pop();
+    }
     encPathDraw(encPos);
 }
 
 //エンコーダー軌跡　ポイントは緑のEncMaker
 //（TODO:位置修正対応（パスを修正））
 function encPathDraw(pos, rota) {
-    //マーカーのドロップ（ドラッグ終了）時
+    //マーカーのドラッグしていないときはENCMAKERと位置指定が同じ場所に
     if (!setDrag) {
         setMarker.setPosition(pos);
     }
@@ -541,30 +548,30 @@ function encPathDraw(pos, rota) {
         map: map,
         zIndex: 1// 重なりの優先値(z-index)
     });
-    encMarkerArray.push(encMarker);
-    // infowindow内のコンテンツ(html)を作成 http://kwski.net/api/799/
-    var time = new Date(jData.time); //time.toLocaleString()
-    var infoWinMsg = '<div class="infowindow' + jData.no + '">'
-            + 'No.' + jData.no
-            // '<img src="' + imgfile + '" width="100">'
-            + ', ' + time.toLocaleString() + '<br />'
-            + ',GPS高度:' + jData.alti + 'm'
-            + ',方向:' + rota + '°' + ',pitch ' + jData.pitch + '°'
-            + ',roll:' + jData.roll + '°'
-            + '<br>btr:' + jData.btr + '</div>';
+
     //関数で呼ばないとInfowindowが重なる
-    attachMessage(encMarker, infoWinMsg);
+    attachMessage(encMarker, rota);
     encPoly.setMap(null);
     encPoly.setMap(map);
+    encMarkerArray.push(encMarker);
 }
 
 //ローバーアイコンのWindow
 var lastInfoWin = null;
-function attachMessage(marker, msg) {
+function attachMessage(marker, rota) {
+    // infowindow内のコンテンツ(html)を作成 http://kwski.net/api/799/
+    var time = new Date(jData.time); //time.toLocaleString()
     //http://www.nanchatte.com/map/showDifferentInfoWindowOnEachMarker.html
     var infoWin = new google.maps.InfoWindow({
         maxWidth: 300, // infowindowの最大幅を設定
-        content: msg
+        content: '<div class="infowindow' + jData.no + '">'
+                + 'No.' + jData.no
+                // '<img src="' + imgfile + '" width="100">'
+                + ', ' + time.toLocaleString() + '<br />'
+                + ',GPS高度:' + jData.alti + 'm'
+                + ',方向:' + rota + '°' + ',pitch ' + jData.pitch + '°'
+                + ',roll:' + jData.roll + '°'
+                + '<br>btr:' + jData.btr + '</div>'
     });
     // イベントを取得するListenerを追加
     google.maps.event.addListener(marker, 'click', function () {
@@ -597,7 +604,6 @@ var oriBar = "W";
 for (var i = 0; i < ori8.length; i++) {
     oriBar += ("|........|........|" + ori8[i]);
 }
-var gpsMarker = null;
 var encMarker = null;
 
 function readJData(res) {
@@ -669,9 +675,8 @@ function readJData(res) {
             }
             encMarker = new google.maps.Marker({
                 position: encPos,
-                icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
+                icon: {path: 'M -2,2 0,-2 2,2 0,0 z', // 矢印中心が先っぽだけだったのでPath作った。
                     //var arrowPath = google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
-                    // 矢印中心が先っぽだけだったのでPath作った。
                     scale: 3,
                     strokeColor: '#0000FF',
                     rotation: jData.rota
