@@ -5,9 +5,35 @@
 var google;
 google.maps.event.addDomListener(window, 'load', initialize);
 var map;
+var peer = null;
+var recDis = 0;
+//終了時 https://remotestance.com/blog/1447/
+//カスタムメッセージは出ない仕様になってた　http://qiita.com/nantekkotai/items/9a6e2c98ed704934ab47
+//http://lightgauge.net/javascript/javascript-tech/3477/
+$(function () {
+    $(window).on("beforeunload", function (e) {
+        if (peer !== null) {
+            //peer.destroy();
+            //setMsgTextArea('Peer接続を破棄');
+        }
+        //距離が短い場合は、記録を削除
+        if (recDis !== 0 && recDis < 20) {
+            gdDelFolder();
+
+        }
+        for (i = 0; i < 100; i++) {
+            setMsgTextArea('移動距離が短いので軌跡記録を破棄します.-1');
+        }
+        setTimeout(function () {
+            setMsgTextArea('移動距離が短いので軌跡記録を破棄します-2');
+        }, 1000);
+        return true;
+    });
+});
 
 function initialize() {
-    //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
+
+//デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
     var mapOptions = {
         zoom: 22,
         //center: gPos,
@@ -21,13 +47,13 @@ function initialize() {
     //http://netbeans-org.1045718.n5.nabble.com/How-to-debug-https-or-SSL-web-applications-in-netbeans-td2885406.html
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
-            // success callback
+// success callback
             var pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
             map.setCenter(pos);
             //https://developers.google.com/maps/documentation/javascript/reference#Circle
 
         }, function (error) {
-            // error callback
+// error callback
             switch (error.code) {
                 case 1:
                     $("#orient").html("ブラウザの位置情報の利用が許可されていません");
@@ -39,21 +65,17 @@ function initialize() {
                     $("#orient").html("ブラウザの位置情報がタイムアウトしました");
                     break;
             }
-            //POS取得できなかった場合。
+//POS取得できなかった場合。
             map.setCenter(new google.maps.LatLng(35.8401073, 137.9581047));
         });
     }
     padInitialize();
     gamePadInitialize();
     uiInitialize();
-    //終了時
-    $(window).on("beforeunload", function () {
-        peer.destroy();
-    });
 }
 
-var padg = null;     //マウスパッド コンテキスト
-var pMouse = {x: null, y: null};// マウス座標
+var padg = null; //マウスパッド コンテキスト
+var pMouse = {x: null, y: null}; // マウス座標
 var yRange = 400;
 var yCenter = 1500;
 var xRange = 400;
@@ -73,7 +95,6 @@ function padInitialize() {
     pMouse.x = 120;
     pMouse.y = 120;
     padDraw(pCanvas);
-
     //HTML5のcanvas内の複数の画像をドラッグ＆ドロップさせてみる http://qiita.com/akase244/items/b801f435e85ea67a70eb
     pCanvas.addEventListener("mousedown", function (e) {
         // マウス位置を更新
@@ -84,7 +105,6 @@ function padInitialize() {
             isDragging = true;
         }
     }, false);
-
     // ドラッグ終了
     pCanvas.addEventListener('mouseup', function (e) {
         isDragging = false;
@@ -92,7 +112,6 @@ function padInitialize() {
         pMouse.y = 120;
         padDraw(pCanvas);
     }, false);
-
     pCanvas.addEventListener("mousemove", function (e) {
         //ドラッグ中
         if (isDragging === true) {
@@ -105,7 +124,6 @@ function padInitialize() {
             padDraw(pCanvas);
         }
     }, false);
-
     // 要素からマウスが出た際の処理
     pCanvas.addEventListener("mouseout", function (e) {
         isDragging = false;
@@ -113,15 +131,14 @@ function padInitialize() {
         pMouse.y = 120;
         padDraw(pCanvas);
     }, false);
-
     //サーボPWMの制御幅で角度コントロール
     //http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
     //パルス幅　800us〜1500usでー90～0度、1500us~2300usで0〜90度の角度設定．
     //初期値読み取り
-    yRange = $("#yRange").val();//400;
-    yCenter = $("#yCenter").val();//1500;
-    xRange = $("#xRange").val();//400;
-    xCenter = $("#xCenter").val();//1500;
+    yRange = $("#yRange").val(); //400;
+    yCenter = $("#yCenter").val(); //1500;
+    xRange = $("#xRange").val(); //400;
+    xCenter = $("#xCenter").val(); //1500;
 
     //変更読み取り
     $("#yRange").change(function () {
@@ -152,16 +169,16 @@ function padInitialize() {
 }
 //マウスによるPAD操作の描画
 function  padDraw(canvas) {
-    // クリア
+// クリア
     mouseg.clearRect(0, 0, canvas.width, canvas.height);
     //カメラ位置　横方向センターか？
     if ($("#xCamera").val() !== $("#xCCenter").val()) {
-        //if (peerdConn) {
-        //    peerdConn.send(("0" + $("#xCCenter").val()).slice(-4) + "x");
-        //}
+//if (peerdConn) {
+//    peerdConn.send(("0" + $("#xCCenter").val()).slice(-4) + "x");
+//}
         return;
     }
-    // マウスの位置に三角を描画
+// マウスの位置に三角を描画
     mouseg.beginPath();
     //パスを使って図形を描画するには？ http://javascript-api.sophia-it.com/reference/%E3%83%91%E3%82%B9%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E5%9B%B3%E5%BD%A2%E3%82%92%E6%8F%8F%E7%94%BB%E3%81%99%E3%82%8B%E3%81%AB%E3%81%AF%EF%BC%9F
     //mouseg.arc(pMouse.x, pMouse.y, 16, 0, Math.PI * 2, false);
@@ -170,7 +187,7 @@ function  padDraw(canvas) {
     mouseg.lineTo(pMouse.x + 15, pMouse.y + 10);
     mouseg.closePath();
     mouseg.strokeStyle = "blue"; // 線の色を指定する
-    mouseg.fillStyle = "green";  // 塗りつぶしの色を指定する
+    mouseg.fillStyle = "green"; // 塗りつぶしの色を指定する
     mouseg.fill();
     mouseg.stroke();
     // マウスの情報を表示
@@ -201,13 +218,13 @@ function  padDraw(canvas) {
         pMouse.y += 20;
     }
 
-    //Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
+//Arduino サーボ制御　http://tetsuakibaba.jp/index.php?page=workshop/ServoBasis/main
     var xPWM = xC + parseInt(pMouse.x * (xR / 100), 10);
     var yPWM = yC + parseInt(pMouse.y * (yR / 100), 10);
     commandStr = "BTC:" + xPWM + "" + yPWM + "m";
     //JavaScriptで指定した数の小数も表示する http://d.hatena.ne.jp/necoyama3/20090904/1252074054
     //$("#mXY").html(parseFloat(pMouse.x).toFixed(1) + ", " + parseFloat(pMouse.y).toFixed(1));
-    $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y));// + "/" + mStr);
+    $("#mXY").html(parseInt(pMouse.x) + ", " + parseInt(pMouse.y)); // + "/" + mStr);
 }
 
 function gamePadInitialize() {
@@ -221,28 +238,28 @@ function gamePadInitialize() {
     //　HTML5-JavaScript-Gamepad-Controller-Library　https://github.com/kallaspriit/HTML5-JavaScript-Gamepad-Controller-Library
 
     if (window.GamepadEvent) {
-        // ゲームパッドを接続すると実行されるイベント
-        //window.addEventListener("gamepadconnected", function (e) {
-        // console.log(e.gamepad);
-        //ブラウザ起動時にpadのボタン何を押してもgamepadconnectedが発火しない。
-        //ブラウザのタグを切り替えると発火する模様。
-        //不便なので手動にする
+// ゲームパッドを接続すると実行されるイベント
+//window.addEventListener("gamepadconnected", function (e) {
+// console.log(e.gamepad);
+//ブラウザ起動時にpadのボタン何を押してもgamepadconnectedが発火しない。
+//ブラウザのタグを切り替えると発火する模様。
+//不便なので手動にする
         $("#gpSW").click(function () {
-            // ゲームパッドリストを取得する
+// ゲームパッドリストを取得する
             var gamepad_list = navigator.getGamepads();
             console.log(gamepad_list);
             var gamePad = false;
             for (i = 0; i < gamepad_list.length; i++) {
-                // Gamepad オブジェクトを取得する
+// Gamepad オブジェクトを取得する
                 if (!gamepad_list[i]) {
                     continue;
                 }
                 gamePad = gamepad_list[i];
                 gamePadID = i; //Loop中の接続確認のためID指定
             }
-            //GamePadがある。
+//GamePadがある。
             if (gamePad) {
-                // ゲームパッドの識別名
+// ゲームパッドの識別名
                 var gStr = "id: " + gamePad.id + "\n";
                 // ゲームパッドの物理的な接続状態
                 gStr += "connected: " + gamePad.connected + "\n";
@@ -275,7 +292,7 @@ function gamePadInitialize() {
 }
 
 function gamePadListen(gamePadID, gamePadInterval) {
-    var gamepad_list = navigator.getGamepads();//Chromeでは毎回呼び出す
+    var gamepad_list = navigator.getGamepads(); //Chromeでは毎回呼び出す
     var gamePad = gamepad_list[gamePadID];
     //接続確認
     if (!gamePad) {
@@ -288,16 +305,16 @@ function gamePadListen(gamePadID, gamePadInterval) {
         padDraw();
         return;
     }
-    // 軸リスト axes
+// 軸リスト axes
     var axes = gamePad.axes;
     if (axes !== lastAxes) {
-        //http://www.w3.org/TR/gamepad/#remapping
-        //http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
-        //左スティック　左右　axes[0] (-1.0 ~ +1.0)
-        //左スティック　上下　axes[1]
-        //右スティック　左右　axes[2]
-        //右スティック　上下　axes[3]
-        //console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
+//http://www.w3.org/TR/gamepad/#remapping
+//http://hakuhin.jp/js/gamepad.html#GAMEPAD_GAMEPAD_AXES
+//左スティック　左右　axes[0] (-1.0 ~ +1.0)
+//左スティック　上下　axes[1]
+//右スティック　左右　axes[2]
+//右スティック　上下　axes[3]
+//console.log('gamepad axes,' + axes[0] + ', ' + axes[1] + ', ' + axes[2] + ', ' + axes[3] );
         pMouse.x = (axes[0] * 120) + 120;
         pMouse.y = (axes[1] * 120) + 120;
         padDraw();
@@ -320,57 +337,49 @@ function gamePadListen(gamePadID, gamePadInterval) {
 }
 
 function uiInitialize() {
-    //Camera servo control
-    //レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
-    //Xカメラ操作
+//Camera servo control
+//レンジ入力（input[type=range]）の変更時の値をリアルタイムに取得する　http://elearn.jp/jmemo/jquery/memo-287.html
+//Xカメラ操作
     $("#xCamera").on('input', function () {
-        //JavaScriptでゼロ埋めする方法 http://stabucky.com/wp/archives/4655
+//JavaScriptでゼロ埋めする方法 http://stabucky.com/wp/archives/4655
         commandStr = "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
-
     //Center Click
     $("#xCset").click(function () {
         $("#xCamera").val($("#xCCenter").val());
         commandStr = "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
-
     //xCamera　中心　xCCenter
     $("#xCamera").val($("#xCCenter").val());
     $("#xCCenter").on('input', function () {
         $("#xCamera").val($("#xCCenter").val());
         commandStr = "BTC:" + ("0" + $("#xCamera").val()).slice(-4) + "x";
     });
-
     //Yカメラ操作
     $("#yCamera").on('input', function () {
         commandStr = "BTC:" + ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
-
     //Center Click
     $("#yCSet").click(function () {
         $("#yCamera").val($("#yCCenter").val());
         commandStr = "BTC:" + ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
-
     //CameraY↑範囲"yCMaxRange"
     $("#yCamera").prop('max', $("#yCMaxRange").val());
     $("#yCMaxRange").change(function () {
         $("#yCamera").prop('max', $("#yCMaxRange").val());
     });
-
     //CameraY↓範囲"yCMinRange
     $("#yCamera").prop('min', $("#yCMinRange").val());
     $("#yCMinRange").change(function () {
         $("#yCamera").prop('min', $("#yCMinRange").val());
     });
-
     //CameraY 補正"yCCenter"
     $("#yCamera").val($("#yCCenter").val());
     $("#yCCenter").on('input', function () {
         $("#yCamera").val($("#yCCenter").val());
         commandStr = "BTC:" + ("0" + $("#yCamera").val()).slice(-4) + "y";
     });
-
     //BT connect Click
     $("#btConn").click(function () {
         commandStr = "btConnect";
@@ -384,13 +393,10 @@ function uiInitialize() {
     $("#videoRotate270").click(function () {
         $("#android-video").css("-webkit-transform", "rotate(270deg)");
     });
-
     $("#videoRotate0").click(function () {
         $("#android-video").css("-webkit-transform", "rotate(0deg)");
     });
-
     $("#RcBatVol").html("-.-");
-
     //テスト http://qiita.com/shizuma/items/d561f37f864c3ebb5096 jQuery 便利なonを使おう（on click)
     //$('#deBug').click(getSnap);
     //debug カクチュウ　35.764267, 137.954661
@@ -419,7 +425,6 @@ var setDrag = false; //位置修正中
 var setInfoWin; //位置修正決定インフォ
 var gpsAccCircle = null; //GPS精度 距離
 var encMarkerArray = [];
-
 function polyInitialize(pos) {
     //シンボルをポリラインに追加する https://developers.google.com/maps/documentation/javascript/symbols?hl=ja#add_to_polyline
     //var lineSymbol = { google.maps.SymbolPath.FORWARD_CLOSED_ARROW　};
@@ -445,23 +450,7 @@ function polyInitialize(pos) {
         //}],
         zIndex: 1// 重なりの優先値(z-index)
     });
-    //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
-    //マーカー、パスのクリア
-    $("#mapClear").click(function () {
-        for (var i = 0; i < encMarkerArray.length; i++) {
-            encMarkerArray[i].setMap(null);
-        }
-        encMarkerArray = [];
-        var gPath = gpsPoly.getPath();
-        var ePath = encPoly.getPath();
-        gpsPoly.setMap(null);
-        encPoly.setMap(null);
-        //ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
-        //MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
-        gPath.clear();
-        ePath.clear();
-    });
-
+    map.setCenter(pos);
     //GPS 精度円
     gpsAccCircle = new google.maps.Circle({
         fillColor: '#ff0000', // 塗りつぶし色
@@ -493,7 +482,6 @@ function polyInitialize(pos) {
         content: '青丸アイコンを現在地にドラッグしてください。'
     });
     startInfoWin.open(map, setMarker);
-
     setInfoWin = new google.maps.InfoWindow({
         content: '<button onClick="setEndInfoWin()">現在位置設定</button>'
     });
@@ -504,11 +492,29 @@ function polyInitialize(pos) {
         setDrag = true;
         // イベントの引数evの、プロパティ.latLngが緯度経度。
         setPos = ev.latLng;
+        map.setCenter(setPos);
         setInfoWin.open(map, setMarker);
         //移動のキャンセル
         google.maps.event.addListener(setInfoWin, 'closeclick', function () {
             setDrag = false;
+            map.setCenter(pos);
         });
+    });
+    //複数のマーカーをまとめて地図上から削除する http://googlemaps.googlermania.com/google_maps_api_v3/ja/map_example_remove_all_markers.html
+    //マーカー、パスのクリア
+    $("#mapClear").click(function () {
+        for (var i = 0; i < encMarkerArray.length; i++) {
+            encMarkerArray[i].setMap(null);
+        }
+        encMarkerArray = [];
+        var gPath = gpsPoly.getPath();
+        var ePath = encPoly.getPath();
+        gpsPoly.setMap(null);
+        encPoly.setMap(null);
+        //ポリラインを検査する https://developers.google.com/maps/documentation/javascript/shapes?hl=ja#polyline_remove
+        //MVCArray class  https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#MVCArray
+        gPath.clear();
+        ePath.clear();
     });
 }
 
@@ -522,7 +528,6 @@ function setEndInfoWin() {
         ePath.pop();
     }
     encPathDraw(setPos);
-    map.setCenter(setPos);
     encPos = setPos;
     setDrag = false;
 }
@@ -530,7 +535,7 @@ function setEndInfoWin() {
 //エンコーダー軌跡　ポイントは緑のEncMaker
 //（TODO:位置修正対応（パスを修正））
 function encPathDraw(pos, rota) {
-    //マーカーのドラッグしていないときはENCMAKERと位置指定が同じ場所に
+//マーカーのドラッグしていないときはENCMAKERと位置指定が同じ場所に
     if (!setDrag) {
         setMarker.setPosition(pos);
     }
@@ -538,7 +543,6 @@ function encPathDraw(pos, rota) {
     //GoogleMAP上の高度
     //gElevation(rPos);
     ePath.push(pos);
-
     var encMarker = new google.maps.Marker({
         position: pos,
         icon: {path: 'M -2,2 0,-2 2,2 0,0 z',
@@ -549,7 +553,6 @@ function encPathDraw(pos, rota) {
         map: map,
         zIndex: 1// 重なりの優先値(z-index)
     });
-
     //関数で呼ばないとInfowindowが重なる
     attachMessage(encMarker, rota);
     encPoly.setMap(null);
@@ -601,14 +604,12 @@ var jData = null;
 var sumRota = 0;
 var rCount = 0;
 var sumDis = 0;
-var recDis = 0;
 const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
 var oriBar = "W";
 for (var i = 0; i < ori8.length; i++) {
     oriBar += ("|........|........|" + ori8[i]);
 }
 var encMarker = null;
-
 function readJData(res) {
     $("#JSON").html(res);
     //Androidデータ読み出し
@@ -669,10 +670,7 @@ function readJData(res) {
                 if (sumDis > 2) {
                     encPathDraw(encPos, avgRota);
                     recDis += sumDis;
-                    if (recDis > 20) {
-                        videoSnapShot(jData);
-                        //終了時20m以内ならGdriveから削除か
-                    }
+                    videoSnapShot(jData);
                     sumDis = 0;
                 }
             }
@@ -769,9 +767,9 @@ function  btrDecode(btr) {
         $("#RcBatVol").html(a0Vol.toFixed(1) + "V");
         //ローバーホイル回転センサー受信
     }
-    //（タイヤ回転センサ）
+//（タイヤ回転センサ）
     if (btr.substr(0, 4) === "RPS:" && btr.substr(4) !== '0' && encPos !== null) {
-        //タイヤ一回転カウントでの距離
+//タイヤ一回転カウントでの距離
         var countM = Number($("#countM").val()) * 0.001;
         //ホイルカウントから1秒間の距離を計算
         dis = Number(btr.substr(4)) * countM;
@@ -798,9 +796,9 @@ function videoSnapShot(jData) {
     //記録用GDフォルダ作製
     if (jData !== null) {
         if (saveDirID === 0) {
-            gMkdir(jData.time, url, rJson);
+            gdInsertFolder(jData.time, url, rJson);
         } else {
-            saveJpegM(jData.time + ".jpg", url, rJson);
+            gdUploadImg(jData.time + ".jpg", url, rJson);
         }
     }
 }
@@ -926,7 +924,6 @@ function autoPilot(rota) {
 }
 
 var gapi;
-var peer;
 var peerdConn = null; // 接続したコネを保存しておく変数
 var helloAndroid = false;
 var lastAxes;
@@ -1069,10 +1066,11 @@ function loadPeerId() {
 //TODO:　カメラ画像、経路データをGoogleDriveに保存
 //skyWayFolderIDの下に読み込み共有の経路ファイル、写真用のTime番号のフォルダ作る。
 //GoogleDrive経路一覧共通ファイルに上記フォルダIDを追加。
-//　GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
+//GDフォルダ作成 Creating a folder https://developers.google.com/drive/v2/web/folder#creating_a_folder
 //Google Driveフォルダに権限追加する方法 http://qiita.com/nurburg/items/7720d031a3adac5a3c34#%E6%9B%B8%E3%81%8D%E6%96%B9
 //Google Drive APIs REST v2 Permissions: insert https://developers.google.com/drive/v2/reference/permissions/insert
-function gMkdir(name, url, data) {
+var mapLinkID;
+function gdInsertFolder(name, url, data) {
     var request = gapi.client.drive.files.insert({
         'path': '/upload/drive/v2/files',
         'method': 'POST',
@@ -1080,10 +1078,11 @@ function gMkdir(name, url, data) {
         "parents": [{"id": skyWayFolderID}],
         "mimeType": "application/vnd.google-apps.folder"
     });
+    //画像保存Folder作成　id = saveDirID
     request.execute(function (insert) {
         saveDirID = insert.id;
         console.log("application/vnd.google-apps.folder");
-        console.log(insert);
+        //console.log(insert);
         setMsgTextArea('JpegSaveDirID :' + saveDirID);
         //permissions change(共有（読み出し））
         var body = {
@@ -1099,9 +1098,9 @@ function gMkdir(name, url, data) {
         perRequest.execute(function (resp) {
             console.log('folder permissions:Done');
             console.log(resp);
-            saveJpegM(name + ".jpg", url, data);
+            gdUploadImg(name + ".jpg", url, data);
         });
-        //全ユーザーの記録先をフォルダファイルで記録
+        //軌跡記録リンク用フォルダ作成　id = mapLinkID (全ユーザーの記録先をフォルダファイルで記録)
         //（gapi.client.drive.files.insertがJSでフォルダのみの模様）
         var json = eval('(' + data + ')');
         var recRequest = gapi.client.drive.files.insert({
@@ -1115,14 +1114,31 @@ function gMkdir(name, url, data) {
             'description': [saveDirID, googleID].join(',')
         });
         recRequest.execute(function (insert) {
-            var fileID = insert.id;
-            console.log('mapLink:' + fileID);
+            mapLinkID = insert.id;
+            console.log('mapLink:' + mapLinkID);
+            setMsgTextArea('mapLink:' + mapLinkID);
             console.log(insert);
-            setMsgTextArea('mapLink:' + fileID);
         });
     });
 }
 
+//距離の短い軌跡データは削除する mapLinkID, saveDirID
+function gdDelFolder() {
+//DEL saveDirID folder
+    var request1 = gapi.client.drive.files.delete({
+        'fileId': saveDirID
+    });
+    request1.execute(function (resp) {
+        console.log(resp);
+    });
+    //DEL mapLinkID folder
+    var request2 = gapi.client.drive.files.delete({
+        'fileId': mapLinkID
+    });
+    request2.execute(function (resp) {
+        console.log(resp);
+    });
+}
 //HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
 //GDアップロードにはSimple、マルチパートがある。
 //Simple upload https://developers.google.com/drive/v2/web/manage-uploads#simple
@@ -1135,7 +1151,7 @@ function gMkdir(name, url, data) {
 //いまさら聞けないHTTPマルチパートフォームデータ送信 http://d.hatena.ne.jp/satox/20110726/1311665904
 //JavaScriptのみでGoogle Driveに動的にテキストや画像等を保存する http://qiita.com/kjunichi/items/552f13b48685021966e4
 //Google Drive APIでFile OpenからSaveまで http://qiita.com/nida_001/items/9f0479e9e9f5051bca3c
-function saveJpegM(name, url, data) {
+function gdUploadImg(name, url, data) {
     var contentType = 'image/jpeg'; // 'application/octet-stream';
     var metadata = {
         'title': name,
@@ -1159,7 +1175,8 @@ function saveJpegM(name, url, data) {
         'body': multipartRequestBody
     });
     request.execute(function (file) {
-        console.log('image/jpeg');
+        console.log('Upload jpeg:' + name);
+        setMsgTextArea('Upload jpeg:' + name + '/dis:' + recDis);
         console.log(file);
         //console.log(multipartRequestBody);
     });
