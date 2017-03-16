@@ -5,35 +5,14 @@
 var google;
 google.maps.event.addDomListener(window, 'load', initialize);
 var map;
-var peer = null;
-var recDis = 0;
-//終了時 https://remotestance.com/blog/1447/
-//カスタムメッセージは出ない仕様になってた　http://qiita.com/nantekkotai/items/9a6e2c98ed704934ab47
-//http://lightgauge.net/javascript/javascript-tech/3477/
-$(function () {
-    $(window).on("beforeunload", function (e) {
-        if (peer !== null) {
-            //peer.destroy();
-            //setMsgTextArea('Peer接続を破棄');
-        }
-        //距離が短い場合は、記録を削除
-        if (recDis !== 0 && recDis < 20) {
-            gdDelFolder();
-
-        }
-        for (i = 0; i < 100; i++) {
-            setMsgTextArea('移動距離が短いので軌跡記録を破棄します.-1');
-        }
-        setTimeout(function () {
-            setMsgTextArea('移動距離が短いので軌跡記録を破棄します-2');
-        }, 1000);
-        return true;
-    });
-});
 
 function initialize() {
-
-//デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
+    //終了時　beforeunload　イベントがpeer.jsで上書きされるのでここで書いてもダメ。
+    //peer  が　出来てからでないとだめだった。
+    //クローム検証ウィンドウ（F12キー）のElementのEvent Listenersタグの再読み込みでわかった。
+    //$(window).on("beforeunload", function (e) {
+    //return; }
+    //デバッグ用→　document.getElementById("show_result").innerHTML = error.message;
     var mapOptions = {
         zoom: 22,
         //center: gPos,
@@ -450,7 +429,6 @@ function polyInitialize(pos) {
         //}],
         zIndex: 1// 重なりの優先値(z-index)
     });
-    map.setCenter(pos);
     //GPS 精度円
     gpsAccCircle = new google.maps.Circle({
         fillColor: '#ff0000', // 塗りつぶし色
@@ -475,6 +453,7 @@ function polyInitialize(pos) {
         position: pos,
         zIndex: 3// 重りの優先値(z-index)
     });
+    map.setCenter(pos);
     //情報ウィンドウを開く/閉じる http://www.ajaxtower.jp/googlemaps/ginfowindow/index2.html
     //google.maps.InfoWindow class
     //https://developers.google.com/maps/documentation/javascript/3.exp/reference?hl=ja#InfoWindow
@@ -604,6 +583,7 @@ var jData = null;
 var sumRota = 0;
 var rCount = 0;
 var sumDis = 0;
+var recDis = 0;
 const ori8 = ["N W", "  N  ", "N E", " E ", "S E", " S ", "S W", " W ", "N W", "  N  ", "N E", " E "];
 var oriBar = "W";
 for (var i = 0; i < ori8.length; i++) {
@@ -700,17 +680,20 @@ function readJData(res) {
         $("#orient").html("GPSが受信できません");
     } else {
         var gpsPos = new google.maps.LatLng(jData.lat, jData.lng);
-        //地図中心　GPS
-        if ($('#gpsCenter').prop('checked')) {
-            map.setCenter(gpsPos);
-        }
-        //初回
         //GPS初回受信　エンコーダ位置指定
         if (lastGpsPos === null) {
             lastGpsPos = gpsPos;
             polyInitialize(gpsPos);
         }
-
+        //GPS (位置設定までGPSで地図中心
+        if ( setPos === null) { 
+           map.setCenter(gpsPos);
+           setMarker.setPosition(gpsPos);
+        } 
+        //地図中心　
+        if ($('#gpsCenter').prop('checked')) {
+           map.setCenter(gpsPos);  
+        }
         if (gpsAccCount === 0) {
             //前回GPS精度円を除去
             gpsAccCircle.setMap(null);
@@ -922,7 +905,7 @@ function autoPilot(rota) {
         }
     }
 }
-
+var peer = null;
 var gapi;
 var peerdConn = null; // 接続したコネを保存しておく変数
 var helloAndroid = false;
@@ -1138,6 +1121,8 @@ function gdDelFolder() {
     request2.execute(function (resp) {
         console.log(resp);
     });
+    setMsgTextArea('移動距離が短いので軌跡記録を破棄します.');
+   
 }
 //HTML5のvideoとcanvasで動画のキャプチャを取る http://maepon.skpn.com/web/entry-32.html
 //GDアップロードにはSimple、マルチパートがある。
@@ -1176,7 +1161,7 @@ function gdUploadImg(name, url, data) {
     });
     request.execute(function (file) {
         console.log('Upload jpeg:' + name);
-        setMsgTextArea('Upload jpeg:' + name + '/dis:' + recDis);
+        setMsgTextArea('Upload jpeg:' + name + '/dis:' + recDis.toFixed(1) + 'm');
         console.log(file);
         //console.log(multipartRequestBody);
     });
@@ -1204,6 +1189,18 @@ function peerStart(destPeerId) {
             if (helloAndroid === false) {
                 setMsgTextArea('From Android: ' + res);
                 helloAndroid = true;
+                //ブラウザ終了時、、リロード時の関数
+                $(window).on("beforeunload", function () {
+                    if (peer !== null) {
+                        peer.destroy();
+                        setMsgTextArea('Peer接続を破棄');
+                    }
+                    //距離が短い場合は、記録を削除
+                    if (recDis !== 0 && recDis < 20) {
+                        gdDelFolder();
+                    }
+                    return true;
+                });
             } else {
                 readJData(res);
             }
@@ -1227,6 +1224,7 @@ function peerStart(destPeerId) {
             setMsgTextArea('call-err : ' + err);
         });
     });
+
 }
 
 //未使用//現在地の地図の高度を表示
